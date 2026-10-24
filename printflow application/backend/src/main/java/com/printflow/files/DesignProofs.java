@@ -59,7 +59,24 @@ public class DesignProofs {
  @Transactional(readOnly=true) public Download referenceCopy(StaffPrincipal user,UUID id,UUID feedback)throws IOException{lead(user,id,false,false);var rows=db.queryForList("select review_pdf,review_sha256 from reference_feedback where id=? and enquiry_id=?",feedback,id);if(rows.isEmpty())throw new NoSuchElementException();byte[] bytes=(byte[])rows.getFirst().get("review_pdf");try{if(!HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)).equals(rows.getFirst().get("review_sha256")))throw new IOException("Review copy integrity failed");}catch(java.security.NoSuchAlgorithmException impossible){throw new IllegalStateException(impossible);}return new Download(new ByteArrayInputStream(bytes),bytes.length,"Artwork-review-"+feedback+".pdf","application/pdf");}
  @Transactional(readOnly=true) public List<Map<String,Object>> designerQueue(StaffPrincipal user){
   if(!"DESIGNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-  return db.queryForList("select id,customer_name,product_code,quantity,status from enquiries where designer_id=? and status not in ('NEW','CLOSED') order by created_at desc limit 100",user.id());
+  return db.queryForList("""
+   select e.id,e.public_id,e.customer_name,e.product_code,e.quantity,e.status,
+    exists(select 1 from quote_versions q where q.enquiry_id=e.id and q.state='ACCEPTED') as quote_accepted,
+    p.revision as latest_proof_revision,p.display_name as latest_proof_name,p.summary as latest_proof_summary,
+    p.scan_state as latest_proof_scan_state,p.decision as latest_proof_decision,p.current_agreement as latest_proof_current_agreement,
+    coalesce((select count(*) from proof_comments c where c.proof_id=p.id and not exists(select 1 from proof_comment_resolutions r where r.comment_id=c.id)),0)::int as unresolved_feedback_count,
+    (select to_char(min(t.due_date),'YYYY-MM-DD') from design_tasks t where t.enquiry_id=e.id and t.state<>'DONE') as next_task_due_date
+   from enquiries e
+   left join lateral (
+    select p.id,p.revision,a.display_name,p.summary,a.state as scan_state,d.action as decision,q.state='ACCEPTED' as current_agreement
+    from proof_revisions p join design_artifacts a on a.id=p.artifact_id join quote_versions q on q.id=p.quote_id
+    left join proof_decisions d on d.proof_id=p.id
+    where p.enquiry_id=e.id order by p.revision desc limit 1
+   ) p on true
+   where e.designer_id=? and e.status<>'NEW'
+   order by case when e.status='CLOSED' then 1 else 0 end,e.created_at desc,e.id
+   limit 100
+   """,user.id());
  }
  @Transactional public void assign(StaffPrincipal user,UUID enquiry,Assignment assignment){
   if(!"OWNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);lead(user,enquiry,true,true);

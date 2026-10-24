@@ -163,3 +163,7 @@ Focused corrections align operator-visible readiness with role-scoped API fields
 ### Batch 2 final QC/rework attention correction
 
 Owner queue adds `active_rework`, derived from historical rework events and current active production stages. Shared UI predicates keep held jobs in HOLD, current QC and active rework in attention, and READY historical rework out of attention while preserving its audit badge. Operator queue omits this owner metadata. No migration, state transition, authorization or production gate changed. Verification: [Batch 2 final correction](WORKFLOW_REDESIGN_BATCH2_FINAL.md).
+
+## 25 October workflow redesign — Batch 3
+
+Assigned designer dashboard and dedicated project studio: dashboard filters/counts use the queue’s current quote/proof/feedback state; designers can search public PF references, open only assigned projects, preview artwork inline, locate anchored customer feedback, and use project tasks/history/conversation from the full workspace. Queue projection is filtered by authenticated designer ID; project APIs retain their per-resource role/scope checks. Current proof approval, customer decisions and production release remain unchanged. No migration. Focused verification status: [Batch 3 report](WORKFLOW_REDESIGN_BATCH3.md).
