@@ -1,0 +1,89 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+}
+
+group = 'com.printflow'
+version = '0.1.0'
+description = 'J.D.Printex operations platform'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.8'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') { useJUnitPlatform() }
+tasks.withType(JavaCompile).configureEach { options.compilerArgs.add('-parameters') }
+tasks.named('jar') { enabled = false }
+tasks.named('bootJar') { archiveFileName = 'printflow-api.jar' }
+
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+tasks.register('integrationTest', Test) {
+    description = 'Native PostgreSQL HTTP authentication and lead workflow checks'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    maxHeapSize = '256m'
+    shouldRunAfter test
+}
+tasks.named('test') { maxHeapSize = '192m' }
+
+// Explicit local fixtures only; this class has no @Test and is not part of normal suites.
+tasks.register('browserFixtures', JavaExec) {
+    dependsOn integrationTestClasses
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    mainClass = 'com.printflow.BrowserFixtures'
+    workingDir = projectDir
+    maxHeapSize = '256m'
+    args providers.gradleProperty('fixtureMode').getOrElse('prepare')
+    doFirst {
+        def cache = rootProject.file('../.local/integration-classpath.txt')
+        cache.parentFile.mkdirs()
+        cache.text = sourceSets.integrationTest.runtimeClasspath.asPath
+    }
+}
+
+tasks.register('invoiceEmailEvidence', JavaExec) {
+    description = 'Queue one owner-authorized synthetic invoice test copy to the configured private inbox'
+    dependsOn integrationTestClasses
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    mainClass = 'com.printflow.identity.InvoiceEmailEvidence'
+    workingDir = projectDir
+    maxHeapSize = '192m'
+}
+
+tasks.register('capturedPaymentEvidence', JavaExec) {
+    dependsOn integrationTestClasses
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    mainClass = 'com.printflow.identity.CapturedPaymentEvidence'
+    workingDir = projectDir
+    maxHeapSize = '192m'
+}

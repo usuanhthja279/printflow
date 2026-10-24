@@ -1,0 +1,18 @@
+package com.printflow.identity;
+import jakarta.validation.Valid;import jakarta.validation.constraints.*;import java.util.*;import java.io.*;import java.awt.*;import java.awt.image.BufferedImage;import javax.imageio.ImageIO;import org.springframework.http.*;import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.security.core.annotation.AuthenticationPrincipal;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/auth/appearance")
+public class AccountAppearanceController {
+ public record Photo(@NotBlank @Size(max=90000) String base64){}
+ public record Name(@NotNull @Size(max=100) String publicName){}
+ private final JdbcTemplate db;public AccountAppearanceController(JdbcTemplate db){this.db=db;}
+ @GetMapping public ResponseEntity<?> get(@AuthenticationPrincipal StaffPrincipal u){return response(db.queryForMap("select avatar_version as version,avatar_png is not null as has_image,coalesce(public_name,'') as public_name from staff_users where id=?",u.id()));}
+ @GetMapping("/image") public ResponseEntity<?> image(@AuthenticationPrincipal StaffPrincipal u){byte[] bytes=db.queryForObject("select avatar_png from staff_users where id=?",byte[].class,u.id());if(bytes==null)return ResponseEntity.notFound().build();return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_PNG).header("X-Content-Type-Options","nosniff").body(bytes);}
+ @PostMapping("/image") public ResponseEntity<?> photo(@AuthenticationPrincipal StaffPrincipal u,@Valid @RequestBody Photo p)throws IOException{
+  byte[] bytes;try{bytes=Base64.getDecoder().decode(p.base64());}catch(IllegalArgumentException e){throw new IllegalArgumentException("Invalid profile image");}if(bytes.length>65536)throw new IllegalArgumentException("Profile image must be at most 64 KiB");
+  try(var input=ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))){var readers=ImageIO.getImageReaders(input);if(!readers.hasNext())throw new IllegalArgumentException("Choose a PNG or JPEG image");var reader=readers.next();try{String format=reader.getFormatName().toLowerCase(Locale.ROOT);if(!Set.of("png","jpeg","jpg").contains(format))throw new IllegalArgumentException("Choose PNG or JPEG");reader.setInput(input,true,true);int w=reader.getWidth(0),h=reader.getHeight(0);if(w<1||h<1||w>256||h>256)throw new IllegalArgumentException("Resize the profile photo to 256 pixels or less");BufferedImage original=reader.read(0),clean=new BufferedImage(128,128,BufferedImage.TYPE_INT_RGB);Graphics2D g=clean.createGraphics();try{g.setColor(Color.WHITE);g.fillRect(0,0,128,128);g.drawImage(original,0,0,128,128,null);}finally{g.dispose();}var out=new ByteArrayOutputStream();ImageIO.write(clean,"PNG",out);if(out.size()>65536)throw new IllegalArgumentException("Profile image too complex");db.update("update staff_users set avatar_png=?,avatar_version=avatar_version+1 where id=?",out.toByteArray(),u.id());}finally{reader.dispose();}}catch(IOException invalid){throw new IllegalArgumentException("Unreadable profile image");}
+  return response(Map.of("code","PHOTO_SAVED"));
+ }
+ @DeleteMapping("/image") public ResponseEntity<?> reset(@AuthenticationPrincipal StaffPrincipal u){db.update("update staff_users set avatar_png=null,avatar_version=avatar_version+1 where id=?",u.id());return response(Map.of("code","PHOTO_RESET"));}
+ @PutMapping public ResponseEntity<?> name(@AuthenticationPrincipal StaffPrincipal u,@Valid @RequestBody Name n){db.update("update staff_users set public_name=? where id=?",n.publicName().trim(),u.id());return response(Map.of("code","NAME_SAVED"));}
+ private ResponseEntity<?> response(Object b){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(b);}
+}

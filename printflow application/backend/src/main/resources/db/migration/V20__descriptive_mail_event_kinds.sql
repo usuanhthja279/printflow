@@ -1,0 +1,1 @@
+ALTER TABLE mail_outbox ALTER COLUMN kind TYPE VARCHAR(32);

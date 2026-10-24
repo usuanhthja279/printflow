@@ -1,0 +1,60 @@
+name: PrintFlow CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docs-and-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/static_validate.py
+  backend:
+    runs-on: ubuntu-24.04
+    env:
+      DB_URL: jdbc:postgresql://localhost:5434/printflow_ci
+      DB_USERNAME: printflow_ci
+      DB_PASSWORD: ci-only-postgres-not-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Start native PostgreSQL 17
+        run: |
+          test -x /usr/lib/postgresql/17/bin/initdb
+          sudo install -d -o postgres -g postgres /tmp/printflow-ci-pg
+          printf '%s' "$DB_PASSWORD" | sudo -u postgres tee /tmp/printflow-ci-pw >/dev/null
+          sudo chmod 600 /tmp/printflow-ci-pw
+          sudo -u postgres /usr/lib/postgresql/17/bin/initdb -D /tmp/printflow-ci-pg --username=printflow_ci --auth=scram-sha-256 --pwfile=/tmp/printflow-ci-pw
+          sudo rm /tmp/printflow-ci-pw
+          sudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl -D /tmp/printflow-ci-pg -l /tmp/printflow-ci-pg/server.log -o "-h 127.0.0.1 -p 5434" -w start
+          PGPASSWORD="$DB_PASSWORD" /usr/lib/postgresql/17/bin/createdb -h 127.0.0.1 -p 5434 -U printflow_ci printflow_ci
+      - name: Backend tests and executable jar
+        working-directory: backend
+        run: bash gradlew --no-daemon build integrationTest
+      - name: Stop native PostgreSQL
+        if: always()
+        run: |
+          if test -f /tmp/printflow-ci-pg/postmaster.pid; then
+            sudo -u postgres /usr/lib/postgresql/17/bin/pg_ctl -D /tmp/printflow-ci-pg -m fast -w stop
+          fi
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        working-directory: frontend
+      - run: npm run typecheck
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend

@@ -1,0 +1,58 @@
+name: printflow-local
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-printflow}
+      POSTGRES_USER: ${POSTGRES_USER:-printflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-change-me}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - printflow_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-printflow}
+      DB_USERNAME: ${POSTGRES_USER:-printflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-change-me}
+      APP_DEMO_ENABLED: "true"
+      APP_DEMO_KEY: ${DEMO_ADMIN_KEY:-local-demo-key-change-this-123456}
+      APP_PUBLIC_ENQUIRIES_ENABLED: ${PUBLIC_ENQUIRIES_ENABLED:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 15
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_INTERNAL_URL: http://api:8080
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:8080
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+volumes:
+  printflow_db:

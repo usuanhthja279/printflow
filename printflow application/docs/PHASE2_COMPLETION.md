@@ -1,0 +1,41 @@
+# Phase 2 — commercial agreements and design collaboration
+
+24 October 2026. J.D.Printex / jdprintex.in. Native Java 21, Gradle wrapper, PostgreSQL and Next.js. No Docker. Development implementation is subject to the recorded checks below and owner review; this does not authorize production release.
+
+## Delivered scope
+
+- PF-200 / FR-009,014: partial quotation drafts with optimistic revisions and private staff access; manual item quantity/rate pricing, explicitly entered tax basis points, per-line half-up paise rounding and server-verified totals. Staff may retain all-inclusive pricing for a single commercial lot. Existing quote APIs remain compatible.
+- FR-016: owner-versioned print vocabulary for paper type, print sides, colour, press, binding and finishing, alongside product-template GSM/size/finish configuration. Quotation items capture the exact chosen codes and technical notes; later vocabulary edits do not alter old agreements. Tax classification/rates are entered by staff, not inferred by the application.
+- PF-210 / FR-015: local PDFBox-generated branded quotation PDFs, automatically paginated and saved with the issued immutable quote and SHA-256. Downloads are authenticated, scoped, private attachments. No quotation expiry, per the owner's correction. Historical pre-feature quotations retain their original records; a PDF is available for newly issued versions.
+- Controlled withdrawal with a meaningful public reason. An accepted agreement cannot be silently overwritten: a new offer explicitly references it and records the amendment reason. The existing agreement remains accepted while the amendment is pending; accepting the amendment preserves the old evidence as REPLACED history and invalidates proof readiness for the previous agreement.
+- PF-230 / FR-010: transactional, idempotent accepted-quote-to-commercial-order conversion. Immutable order lines copy quantities, prices/tax, totals and specifications without re-entry. An accepted amendment creates a separate order revision while earlier orders remain historical. Clean artwork can be explicitly linked to order lines, with enquiry scope enforced. No manufacturing job or machine release is implied.
+- PF-220 / FR-024–028: private scanned artwork, assigned designer queues, immutable proof versions, raster previews/pins and customer decisions; designer tasks/deadlines/internal notes; auditable comment resolution; side-by-side raster revision comparison and PDF revision downloads; explicit customer rejection as well as change requests/approval.
+- Offline proof approval is limited to owner/assigned sales. It requires exact current quote/file acknowledgement, a clean shared reference artifact as evidence and a meaningful phone/email record. The actor, source and evidence file remain recorded; customers see staff-recorded approval rather than a forged portal decision. Designers cannot approve their own proof on behalf of a customer.
+
+## Verification
+
+`./scripts/Test-PhaseTwo.ps1` passed the Gradle build, 18 unit checks (including a long-document PDF pagination/text-only check) and 19 focused native PostgreSQL HTTP checks: six quotation/order, eight proof/design and five live-work checks. These cover stale draft writes, configured vocabulary, mismatched totals, PDF content/access, immutable order/history, concurrent repeated conversion, withdrawal, amendment evidence, stale proof invalidation, task revisions, private notes, comment resolution, evidenced offline approval and cross-enquiry artwork linkage.
+
+The frontend production build passed after correcting a source encoding issue and rerunning standalone packaging with the required local filesystem permission. Generated quotation PDF was rendered with Poppler and visually inspected. The final production frontend build also passed after the explicit restored-draft labels and lot presentation refinement.
+
+`./scripts/Test-PhaseTwoBrowser.ps1` passed the real native desktop workflow in 25.1 seconds (23.7-second journey; fixture setup/cleanup separate). The same workflow with mobile customer/owner/designer contexts passed in 21.9 seconds (19.8-second journey), additionally exercising task status updates and raster revision comparison. It verifies draft restoration, entered 18% item tax and INR 1,475 total, PDF availability, commercial conversion/linkage, designer tasks, real Defender-cleared reference/design uploads, private preview, pinned feedback/resolution, customer revision approval, explicit amendment acceptance with stale-proof invalidation and staff-recorded phone approval backed by a clean shared reference. No API interception or forced CLEAN values were used. No real customer approval or provider message occurred.
+
+A final narrowly targeted Gradle build and six quotation/order integration checks passed after clarifying all-inclusive prices as commercial lots and tightening nullable input validation. Other proof/live-work checks were not repeated without a new concern. Synthetic fixture staff accounts are disabled and private fixture credentials removed after each browser run; the owner's enrolled account/MFA remains untouched. Fictional local customer/enquiry/artwork history remains available for audit.
+
+`./scripts/Test-PhaseTwoBrowser.ps1 -Check vocabulary` passed in 5.2 seconds (3.6-second browser check). It saves the same owner-configured choices without changing their values, checks the new configuration revision and rejects both stale edits and a null option. Final boundary verification also covers a 1,000-character withdrawal explanation and long-scope historical quotation conversion; the full commercial scope remains preserved.
+
+## Owner review path
+
+1. Open an enquiry in the staff workspace. Enable itemized pricing; enter prices and explicit tax. Save an incomplete draft, close/reopen and confirm restoration. Finish dates/terms, review and issue. Download the PDF as staff and customer.
+2. Customer accepts the exact quotation. Staff creates a commercial order, repeats the action safely, and checks copied lines/specifications. Link clean artwork to its line.
+3. Assign a designer. Create a task/deadline; designer updates it. Share a proof; customer pins feedback and requests changes. Resolve the comment with an explanation, upload/share a replacement and compare revisions.
+4. Customer approves the exact replacement. Alternatively, upload offline evidence as a shared reference and record the verified phone/email agreement as owner/assigned sales. Check the public source label and unreleased production stage.
+5. Prepare an explicit commercial amendment. Check the old agreement stays effective until acceptance; after acceptance, check the old proof is historical and a fresh proof bound to the new agreement is required. A pending offer may instead be withdrawn with a public explanation.
+
+## Boundaries
+
+Phase 3 owns production release/readiness policy, order-line jobs, stock, QC, payments, invoices and delivery. Phase 4 owns real Gmail threads/delivery, WhatsApp and provider payments. Portal messages are available; providers remain unconnected unless separately configured and verified. Advanced sandboxed inline PDF processing/source editing and automatic preflight remain Phase 6; PDFs can be reviewed via authenticated external download in this phase.
+
+The PDF font targets the English-first release. Unsupported script characters fail issuing with an explicit message, preserving the saved draft; no silent replacement text is written. The PDF is a quotation, not a tax invoice or digital signature. Owner review, legal/accounting policy, maintained malware detection validation, native QA/remote CI, encrypted backups/restore and privacy/retention/deployment hardening remain release gates. Existing owner MFA and real credentials are not modified by the synthetic fixtures.
+
+24 October quotation UI follow-up: initial native-scanned artwork, +91 number entry, suggested specifications, waiting/revision gating, artwork email requests, threaded outgoing outbox metadata and owner bulk archival are implemented. See QUOTATION_REVIEW_CORRECTIONS.md. Real Gmail/WhatsApp delivery and inbound mailbox synchronization remain unconfigured/unverified. Older issued PDFs retain original bytes; new PDFs use grid/block styling.

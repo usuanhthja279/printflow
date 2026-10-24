@@ -1,0 +1,4 @@
+package com.printflow.identity;
+import jakarta.validation.Valid;import jakarta.validation.constraints.*;import java.util.Map;import org.springframework.web.bind.annotation.*;import org.springframework.security.core.annotation.AuthenticationPrincipal;import org.springframework.http.*;
+@RestController public class CustomerActivationController{public record Input(@NotBlank @Size(max=72) String password,@AssertTrue boolean consent,@NotBlank String privacyVersion){}private final CustomerSetup setup;public CustomerActivationController(CustomerSetup setup){this.setup=setup;}
+ @PostMapping("/api/v1/auth/customer-activate") public ResponseEntity<?> activate(@AuthenticationPrincipal StaffPrincipal user,@Valid @RequestBody Input input,jakarta.servlet.http.HttpSession session){setup.activate(user,input.password(),input.consent(),input.privacyVersion());session.invalidate();return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("code","ACCOUNT_READY"));}}

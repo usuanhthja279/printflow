@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: printflow-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/printflow}
+    username: ${DB_USERNAME:printflow}
+    password: ${DB_PASSWORD:local-postgres-change-me}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: ${APP_SESSION_SAME_SITE:strict}
+        secure: ${APP_SECURE_COOKIES:true}
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+app:
+  owner:
+    bootstrap:
+      enabled: ${APP_OWNER_BOOTSTRAP_ENABLED:false}
+      username: ${APP_OWNER_BOOTSTRAP_USERNAME:}
+      password: ${APP_OWNER_BOOTSTRAP_PASSWORD:}
+  staff:
+    bootstrap:
+      enabled: ${APP_STAFF_BOOTSTRAP_ENABLED:false}
+      username: ${APP_STAFF_BOOTSTRAP_USERNAME:}
+      password: ${APP_STAFF_BOOTSTRAP_PASSWORD:}
+  demo:
+    enabled: ${APP_DEMO_ENABLED:false}
+    key: ${APP_DEMO_KEY:}
+  public-enquiries-enabled: ${APP_PUBLIC_ENQUIRIES_ENABLED:false}

@@ -1,0 +1,13 @@
+# NOT A DEPLOYMENT. Intentionally contains no services: Phase 0 must NOT be exposed publicly.
+# Build production IaC only after Phase 1 identity/anti-bot/consent/TLS/secret/backup hardening.
+# Do not use this file as an override for the local development stack.
+name: printflow-production-template-not-deployable
+x-release-gate:
+  phase0-public-deployment-allowed: false
+  requirements:
+    - authenticated-and-authorized-staff-routes
+    - guest-rate-limits-and-abuse-controls
+    - production-privacy-notice-and-consent
+    - managed-secrets-and-tls
+    - production-database-backups-and-restore-drill
+    - observability-and-incident-runbook
