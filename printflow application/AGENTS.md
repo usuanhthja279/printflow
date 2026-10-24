@@ -20,6 +20,14 @@
 - Reuse running services where possible. Build or restart only when changed code or configuration requires it; test-only or selector fixes should not trigger another application build or restart.
 - After focused checks pass, broaden or repeat verification only for new changes, failures or unresolved risks. Report concrete results and remaining limitations.
 
+### Windows browser-test startup and recovery
+
+- The frontend Playwright config targets installed Microsoft Edge (`msedge`) by default; `PLAYWRIGHT_CHANNEL` is the explicit override. Run tests through the project Playwright config instead of manually launching Edge or attaching to the user's interactive Edge profile.
+- If Edge/Playwright fails before a test starts with a filesystem sandbox `EPERM`/`EACCES` launch error, classify it as an execution-permission failure, not an app defect. Retry the same focused spec once with the approved execution permissions. Do not repeat the same blocked launch, rebuild the app, or restart services for a browser-executable permission error.
+- If the approved retry still fails, inspect the first launch error and confirm the configured Edge channel/executable is available. Change browser channel only when the configured browser is unavailable and the replacement is supported in this environment; record the channel used. Do not delete browser profiles, kill the user's Edge processes, or install browsers speculatively.
+- Separate startup failures from page/test failures: first confirm the existing web service responds at `PLAYWRIGHT_BASE_URL` (default `http://127.0.0.1:3000`), then run one relevant spec with `--max-failures=1`. Fix a selector or synthetic fixture from the failing assertion and rerun that spec only; do not rebuild/restart unless application code/configuration changed.
+- The first Batch 1 browser attempt was blocked by the filesystem sandbox before page checks; subsequent focused Playwright runs completed. Use this recovery path rather than repeating exploratory Edge launches.
+
 ## Visual evidence for UI changes
 
 - For every significant screen or interaction change, capture the actual app in a browser before and after when the baseline is available. Use 1440 × 900 desktop and 390 × 844 mobile viewports for responsive screens.
