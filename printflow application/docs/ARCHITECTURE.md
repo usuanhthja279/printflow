@@ -172,4 +172,4 @@ Owner-authorized automatic designer routing, project-level production queues and
 
 ## 25 October workflow redesign — Batch 1
 
-WorkflowUI and workflow.css provide presentation shared across existing client components. Readiness derives only from current authorized DTOs; no new endpoint, status, schema, authentication or notification contract. Production and proof mutation bodies retain explicit confirmation and revision/hash/page data. Studio conflicts reset local review confirmation; native dialog focus/escape behavior remains. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+WorkflowUI and workflow.css provide presentation shared across existing client components. Readiness derives only from current authorized DTOs; additive work DTO workflow codes support customer next-action guidance, with no new endpoint, workflow status, schema, authentication or notification contract. Production and proof mutation bodies retain explicit confirmation and revision/hash/page data. Studio conflicts reset local review confirmation; native dialog focus/escape behavior remains. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

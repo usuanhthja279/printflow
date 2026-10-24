@@ -14,6 +14,12 @@
 - `FulfilmentPanel`, `DeliveryPhotoPanel`: evidence before milestone actions, scan blockers, full original photos and server upload provenance; server remains authoritative.
 - `DesignerRoutingPanel`, `WorkConversation`: availability/workload and explicit channel labels; inbound mailbox replies remain unconnected.
 
+## Reference display follow-up
+Enquiry and production views format the existing public UUID as `PF-XXXXXXXX`. This is display-only; existing internal IDs and routes remain unchanged. Staff and production searches match the normalized displayed prefix. The scoped work response adds `publicId` while retaining `id`.
+
+## Workflow next-action follow-up
+The customer next action now uses the scoped work response `workflow` codes for amendment state, proof decision/scan, payment status, production hold, fulfilment stage and delivery issues. Existing display labels remain unchanged and are not parsed to choose actions. Delivery checklists report dispatch pickup-photo readiness separately from delivery-confirmation-photo readiness and distinguish missing, scan-pending, rejected and waived evidence. Existing server-side payment, proof, role and photo-scan gates are unchanged.
+
 ## Scope and verification
 
 Presentation only, Batch 1. No new backend flows, statuses, schema, prices, integrations, deployment, inventory, print-ready bypass or reorders. Native Gradle, no Docker. Focused responsive/interaction checks use synthetic authorized DTO fixtures and do not claim provider delivery or money capture. Results and screenshots are appended after verification.

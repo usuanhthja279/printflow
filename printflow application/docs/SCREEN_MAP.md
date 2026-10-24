@@ -144,4 +144,4 @@ Owner-authorized automatic designer routing, project-level production queues and
 
 ## 25 October workflow redesign — Batch 1
 
-Customer work: next action + five stages + sticky right-hand portal/email rail. Current proof: Open proof studio → desktop page rail/canvas/review controls, stacked on phone. Business: module-specific headers and scoped action inbox. Production: desktop lanes / phone lane selector → job drawer. Delivery: scan evidence before confirmation, full original preview. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+Customer work: reference-aware next action + five stages + sticky right-hand portal/email rail. Current proof: Open proof studio → desktop page rail/canvas/review controls, stacked on phone. Business: module-specific headers and scoped action inbox. Production: desktop lanes / phone lane selector → job drawer. Delivery: separate dispatch and delivery-confirmation evidence readiness, explicit missing/scan states, full original preview. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

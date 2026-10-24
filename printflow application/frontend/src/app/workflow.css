@@ -51,6 +51,8 @@ details.panel.workflow-history { padding:12px 24px; }
 .entity-activity small { display:block; font-size:10px; margin-bottom:8px; color:#65798d; }
 .entity-activity strong { font-size:13px; font-weight:500; }
 .readiness-checklist { border:1px solid #dfe6ef; background:#f8fafc; border-radius:12px; padding:18px; margin:20px 0; }
+.delivery-readiness-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.delivery-readiness-grid .readiness-checklist { margin:10px 0 18px; }
 .readiness-checklist h4 { margin:0 0 12px; font-size:13px; }
 .readiness-checklist ul { list-style:none; padding:0; margin:0; }
 .readiness-checklist li { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-top:1px solid #e6ecf2; font-size:12px; }
@@ -250,6 +252,7 @@ details.panel.workflow-history { padding:12px 24px; }
  .delivery-photo-grid { grid-template-columns:1fr; }
  .delivery-photo-grid img { height:200px; }
  .readiness-checklist { padding:14px; }
+ .delivery-readiness-grid { grid-template-columns:1fr; gap:0; }
  .readiness-checklist em { font-size:9px; }
  .role-action-bar { flex-direction:column; }
  .payment-totals dd { font-size:22px; }
