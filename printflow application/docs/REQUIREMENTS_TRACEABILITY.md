@@ -152,3 +152,7 @@ Owner-authorized automatic designer routing, project-level production queues and
 ## 25 October workflow redesign — Batch 1
 
 PF-300/PF-320/PF-330 presentation: shared next-action/readiness components, exact-revision proof studio, owner scoped intake exceptions, production detail drawer/mobile lane selector, and evidence-first delivery. Customer next actions now use machine-readable scoped workflow states; dispatch pickup evidence and delivery confirmation evidence are reported separately, including missing, pending-scan and rejected files. No status transition, authorization or server-side workflow gate is changed. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+
+## 25 October workflow redesign — Batch 2
+
+PF-300/PF-330 owner operations: actionable dashboard counts and inbox, owner-only designer assignment backlog, filtered production exceptions, release and dispatch readiness reasons, and responsive job queue. New queue metadata is advisory and derived from existing approved quote, proof, payment, invoice and photo records. Operator responses remain scoped and omit owner-only finance/evidence summaries. Existing authorization, revision and production/payment/evidence gates are unchanged; no schema or state transition was added. Evidence and focused test mapping: [WORKFLOW_REDESIGN_BATCH2.md](WORKFLOW_REDESIGN_BATCH2.md).

@@ -145,3 +145,7 @@ Owner-authorized automatic designer routing, project-level production queues and
 ## 25 October workflow redesign — Batch 1
 
 Customer work: reference-aware next action + five stages + sticky right-hand portal/email rail. Current proof: Open proof studio → desktop page rail/canvas/review controls, stacked on phone. Business: module-specific headers and scoped action inbox. Production: desktop lanes / phone lane selector → job drawer. Delivery: separate dispatch and delivery-confirmation evidence readiness, explicit missing/scan states, full original preview. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+
+## 25 October workflow redesign — Batch 2
+
+Owner enquiry screen adds live action counts for quotes, customer decisions, designer assignment, release, production exceptions and dispatch blockers, with direct links into filtered queues. Production queue filters cover release, unassigned, hold, QC/rework and dispatch blockers; desktop lanes fit the available width, while mobile keeps a single-column board and stage selector. Job drawer shows reason-based release/dispatch checks and existing role-gated production controls. Screenshot gallery and view significance: [Batch 2 evidence](WORKFLOW_REDESIGN_BATCH2.md).

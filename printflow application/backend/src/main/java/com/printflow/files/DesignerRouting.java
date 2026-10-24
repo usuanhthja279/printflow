@@ -30,4 +30,5 @@ import org.springframework.transaction.annotation.Transactional;
   for(var row:db.queryForList("select id from enquiries where status='IN_PROGRESS' and designer_id is null and designer_assignment_mode='AUTO' and exists(select 1 from quote_versions q where q.enquiry_id=enquiries.id and q.state='ACCEPTED') order by created_at,id limit 25 for update skip locked"))allocate((UUID)row.get("id"));
  }
  public List<Map<String,Object>> designers(){return db.queryForList("select s.id,s.username,s.public_name,s.designer_available,s.routing_pool,s.must_change_password,(select count(*) from enquiries e where e.designer_id=s.id and e.status='IN_PROGRESS' and not exists(select 1 from fulfilment_work f where f.enquiry_id=e.id)) as active_jobs from staff_users s where s.enabled and s.role='DESIGNER' order by s.username");}
+ public int pendingAssignments(){return db.queryForObject("select count(*) from enquiries e where e.status='IN_PROGRESS' and e.designer_id is null and exists(select 1 from quote_versions q where q.enquiry_id=e.id and q.state='ACCEPTED')",Integer.class);}
 }

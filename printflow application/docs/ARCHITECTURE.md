@@ -173,3 +173,7 @@ Owner-authorized automatic designer routing, project-level production queues and
 ## 25 October workflow redesign — Batch 1
 
 WorkflowUI and workflow.css provide presentation shared across existing client components. Readiness derives only from current authorized DTOs; additive work DTO workflow codes support customer next-action guidance, with no new endpoint, workflow status, schema, authentication or notification contract. Production and proof mutation bodies retain explicit confirmation and revision/hash/page data. Studio conflicts reset local review confirmation; native dialog focus/escape behavior remains. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+
+## 25 October workflow redesign — Batch 2
+
+The owner command centre combines the already authorized enquiry queue with the owner production queue and a read-only designer assignment summary. Production exception filters and drawer checklists consume additive owner-only queue metadata; they do not mutate production state or replace server checks. Operator queue responses remain assignment-scoped and omit the owner-only financial, artwork, invoice and dispatch evidence summaries. Designer backlog count is computed from accepted active work with no designer and does not create or change assignments. No schema or workflow transitions were introduced. Focused API/UI verification and screenshot evidence are recorded in [WORKFLOW_REDESIGN_BATCH2.md](WORKFLOW_REDESIGN_BATCH2.md).

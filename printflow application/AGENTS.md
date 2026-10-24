@@ -19,3 +19,10 @@
 - Keep testing focused on the changed behaviour and its critical regressions. Use the checked-in Gradle wrapper for backend checks; use native services, no Docker or Compose.
 - Reuse running services where possible. Build or restart only when changed code or configuration requires it; test-only or selector fixes should not trigger another application build or restart.
 - After focused checks pass, broaden or repeat verification only for new changes, failures or unresolved risks. Report concrete results and remaining limitations.
+
+## Visual evidence for UI changes
+
+- For every significant screen or interaction change, capture the actual app in a browser before and after when the baseline is available. Use 1440 × 900 desktop and 390 × 844 mobile viewports for responsive screens.
+- Inspect the captured images themselves for layout, wrapping, overflow, clipping, hierarchy, contrast and unreachable controls; a passing screenshot command or DOM assertion alone is not visual verification.
+- Keep screenshots tied to the tested revision and record the route, role, state, viewport and whether data is synthetic or from the local backend. Do not include credentials, session tokens, private customer data or artwork without permission.
+- If actual screenshot capture or image inspection is unavailable, say so explicitly and mark visual verification incomplete. Never fabricate or substitute generated mockups for browser evidence.

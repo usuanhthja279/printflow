@@ -198,6 +198,10 @@ Owner dismiss now also archives accepted/closed work, preserving the accepted do
 
 24 October PDF review slice: native resource-limited PDF inspection and authenticated local-worker multipage canvas preview, per-page location comments, full-document page acknowledgements tied to immutable revision/hash/quote, reference/file Preview dialogs and a persistent least-privilege local test designer are implemented. This supersedes earlier multipage PDF viewer pending notes only for PDF/image preview/comment review; source editing, advanced preflight, gallery reuse, delivery photos/GPS and payment/WhatsApp integration remain separate. API, migration, role and focused evidence: PDF_ARTWORK_REVIEW.md. Owner-proposed entry/payment/notification paths: ORDER_ENTRY_AND_PAYMENT_FLOWS.md.
 
+## 25 October workflow redesign — Batch 2
+
+Owner-only `GET /api/v1/owner/design-routing/summary` returns `{pendingAssignmentCount}` for accepted live projects without an assigned designer; the existing `/api/v1/owner/**` OWNER authorization and no-store behavior apply. The existing `GET /api/v1/production/queue` keeps its role-scoped jobs and adds owner-only advisory fields: rework count, open quotation amendment, current clean proof approval, current-quote invoice, photo requirement/latest pickup scan, payment code, and release/dispatch blocker reason arrays. Operators still see only their assigned queue and do not receive the added finance, evidence, amendment or rework summary fields. These fields are read-only guidance; existing fulfillment, payment, proof, role and revision validation remains authoritative. See [Batch 2 verification](WORKFLOW_REDESIGN_BATCH2.md).
+
 ## Review refinements (24 October)
 
 GET /api/v1/staff/enquiries accepts status=ALL|NEW|REVIEWING|QUOTED|IN_PROGRESS|CLOSED alongside search, filter and before. Filtering occurs before pagination and preserves role visibility. Existing quotation document endpoints now also supply the authenticated in-app PDF preview. No new public file route is introduced. Email grouping is server-managed; clients cannot supply Message-ID, References or phase.

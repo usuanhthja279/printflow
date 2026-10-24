@@ -34,13 +34,13 @@ export default function StaffWorkspace(){
  const [items,setItems]=useState<Lead[]>([]),[selected,setSelected]=useState<Lead|null>(null);
  const [activities,setActivities]=useState<LeadActivity[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [detailOpen,setDetailOpen]=useState(false),[profileOpen,setProfileOpen]=useState(false);
- const [tab,setTab]=useState('ENQUIRIES');const [notice,setNotice]=useState('');
+ const [tab,setTab]=useState('ENQUIRIES');const [productionFocus,setProductionFocus]=useState('ALL');const [notice,setNotice]=useState('');
  const [statusFilter,setStatusFilter]=useState('ALL');
  const [filter,setFilter]=useState('ALL'),[search,setSearch]=useState('');
  const [action,setAction]=useState(''),[due,setDue]=useState(''),[priority,setPriority]=useState<Lead['priority']>('NORMAL');
  const [adding,setAdding]=useState(false),[newLead,setNewLead]=useState(blank),[source,setSource]=useState('WALK_IN');
  const [created,setCreated]=useState<{lead:Lead;trackingToken:string}|null>(null);
- function clearWorkspace(){setDetailOpen(false);setProfileOpen(false);setStaff(null);setItems([]);setSelected(null);setCreated(null);setActivities([]);setAdding(false);setNewLead(blank);setAction('');setDue('');setPassword('');setSearch('');setFilter('ALL');setStatusFilter('ALL');}
+ function clearWorkspace(){setDetailOpen(false);setProfileOpen(false);setStaff(null);setItems([]);setSelected(null);setCreated(null);setActivities([]);setAdding(false);setNewLead(blank);setAction('');setDue('');setPassword('');setSearch('');setFilter('ALL');setStatusFilter('ALL');setProductionFocus('ALL');}
  function failure(e:unknown){
   if(e instanceof ApiError&&e.status===401){clearWorkspace();setError('Please sign in to continue.');}
   else if(e instanceof ApiError&&e.status===409)setError(e.message||'This enquiry changed. Refresh and try again.');
@@ -89,13 +89,13 @@ export default function StaffWorkspace(){
    <div className="staff-toolbar"><p>Signed in as <strong>{staff.username}</strong> · {staff.role}</p><div className="row-actions"><button className="btn btn-outline btn-small" disabled={busy} onClick={async()=>{setError('');try{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}catch(e){failure(e);}}}>Refresh enquiries</button><button className="btn btn-ink btn-small" disabled={busy} onClick={()=>{setTab('ENQUIRIES');setAdding(!adding);}}>{adding?'Cancel new enquiry':'Add enquiry'}</button></div></div>
    <div className="workspace-modules" role="navigation" aria-label="Workspace modules">{['ENQUIRIES',...(staff.role==='OWNER'||staff.contactsAccess?['CONTACTS']:[]),...(staff.role==='OWNER'?['PRODUCTION','DESIGN ROUTING','STAFF','PRODUCTS','EMAIL']:[])].map(t=><button key={t} className={tab===t?'btn btn-ink':'btn btn-outline'} onClick={()=>setTab(t)}>{t}</button>)}</div>
    {tab==='CONTACTS'&&(staff.role==='OWNER'||staff.contactsAccess)&&<ContactsWorkspace lead={selected} linked={async()=>{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}}/>}
-   {staff.role==='OWNER'&&tab==='PRODUCTION'&&<ProductionBoard/>}{staff.role==='OWNER'&&tab==='DESIGN ROUTING'&&<DesignerRoutingPanel/>}
+   {staff.role==='OWNER'&&tab==='PRODUCTION'&&<ProductionBoard initialFilter={productionFocus}/>}{staff.role==='OWNER'&&tab==='DESIGN ROUTING'&&<DesignerRoutingPanel/>}
    {staff.role==='OWNER'&&tab==='STAFF'&&<StaffAdministration ownerId={staff.id} reauthenticate={()=>setStaff({...staff,mfaRequired:true})}/>}
    {staff.role==='OWNER'&&tab==='PRODUCTS'&&<ProductSettings/>}
    {staff.role==='OWNER'&&tab==='STAFF'&&<details className="workflow-history"><summary>Administration · privacy requests</summary><p>Review customer information export and erasure requests.</p><OwnerPrivacy/></details>}
    {staff.role==='OWNER'&&tab==='EMAIL'&&<MailActivity/>}
    <div hidden={tab!=='ENQUIRIES'}>
-   {notice&&<p className="panel" role="status">{notice}</p>}<OwnerActionCentre items={items} onOpen={lead=>{setSelected(lead);setDetailOpen(true);setError('');}}/>
+   {notice&&<p className="panel" role="status">{notice}</p>}<OwnerActionCentre items={items} owner={staff.role==='OWNER'} onQueueFilter={status=>{setTab('ENQUIRIES');setFilter('ALL');setStatusFilter(status);}} onProductionFilter={filter=>{setProductionFocus(filter);setTab('PRODUCTION');}} onDesignRouting={()=>setTab('DESIGN ROUTING')} onOpen={lead=>{setSelected(lead);setDetailOpen(true);setError('');}}/>
    {adding&&<form onSubmit={add} className="panel staff-new"><h2>Add an enquiry</h2><p>Record a walk-in, call or message. Channel selection records the source; no message is sent.</p><div className="form-grid">
     <label className="field">Customer name<input required maxLength={140} value={newLead.customerName} onChange={e=>setNewLead({...newLead,customerName:e.target.value})}/></label>
     <label className="field">Enquiry source<select value={source} onChange={e=>setSource(e.target.value)}>{sources.map(s=><option key={s}>{s}</option>)}</select></label>
