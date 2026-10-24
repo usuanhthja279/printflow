@@ -1,0 +1,37 @@
+# Local services, private configuration and generated evidence
+**/.local/
+**/.tools/
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.qa.example
+!**/.env.prod.example
+**/output/
+printflow application/docs/docs.zip
+
+# Dependencies, build products and test output
+**/node_modules/
+**/.next/
+**/.gradle/
+**/build/
+**/target/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/__pycache__/
+*.log
+*.tsbuildinfo
+
+# Private keys, local databases and editor state
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.dump
+*.sql.gz
+**/.idea/
+**/.vscode/
+*.iml
+**/.DS_Store
