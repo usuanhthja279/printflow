@@ -39,3 +39,15 @@ Final result: the owner SMTP/completion UI check passed in 7.5 seconds (12.3 sec
 The first SMTP UI wait was shorter than the cumulative native batching/transport time and timed out while unsent rows still had zero attempts and no failure code. The check's wait allowance was increased; no email was resent to force a pass and no dispatcher security or status gate was relaxed. The final check verified both all-SENT owner table rows and the customer's Completed state/closure message.
 
 The native stack remains running with real mail enabled. Temporary fixture accounts/credentials and interrupted browser attempts were cleaned or archived; the existing business order was preserved. Synthetic mail metadata remains as audit evidence. No application behaviour change was required by this journey; the changes are focused regression tests and verification documentation.
+
+## Focused workflow UI corrections — 25 October 2026
+
+The customer artwork workspace now uses the stable `workflow.fulfilmentState` code to decide whether the proof workspace stays expanded. It is expanded while fulfilment is `NOT_STARTED` and moves into collapsed review history after fulfilment begins. The customer next-action card now identifies `OVERPAID` and `TERMS_PENDING` explicitly when a job is `READY`, explaining that business reconciliation or terms confirmation is required before dispatch. Balance-due and verified-payment messaging remain distinct. No backend transitions, API contracts, or authorization/payment gates changed.
+
+Verification:
+
+- `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "artwork workspace expands|ready-for-dispatch payment exceptions"` — passed all 4 desktop/mobile checks.
+- `npm.cmd run build` — passed, including TypeScript and static page generation.
+- `./scripts/Test-PhaseTwo.ps1 -SkipBuild -TestClass com.printflow.LiveWorkIntegrationTest` — Gradle `BUILD SUCCESSFUL`; all 4 LiveWork integration tests passed using native PostgreSQL. No Docker was used.
+
+These checks cover the two corrected UI decisions and the existing work API projection that supplies workflow codes. Full end-to-end business verification remains documented above; these targeted corrections did not repeat that full journey.

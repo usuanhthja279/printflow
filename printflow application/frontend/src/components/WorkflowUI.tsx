@@ -12,6 +12,8 @@ export function customerNextAction(data:{status:string;workflow:CustomerWorkflow
  if(w.fulfilmentState==='IN_TRANSIT')return {title:'Your order is on its way',detail:'Follow the staff-confirmed dispatch and delivery updates.',actor:'Delivery team',href:'#work-delivery',label:'View delivery'};
  if(w.fulfilmentState==='READY'){
   if(w.paymentCode==='BALANCE_DUE')return {title:'Your balance is due before dispatch',detail:'Review the current invoice and payment options. Dispatch remains subject to the business’s verified payment checks.',actor:'You',href:'#work-payments',label:'View balance'};
+  if(w.paymentCode==='OVERPAID')return {title:'Payment reconciliation is needed before dispatch',detail:'The recorded payment exceeds the current quotation total. The business must review and reconcile the payment before dispatch.',actor:'Business',href:'#work-payments',label:'View payment details'};
+  if(w.paymentCode==='TERMS_PENDING')return {title:'Payment terms need confirmation before dispatch',detail:'The business must confirm the payment terms for the current quotation before dispatch can proceed.',actor:'Business',href:'#work-payments',label:'View payment agreement'};
   return {title:'Preparing your delivery',detail:'The team will confirm dispatch after its payment and pickup-evidence checks.',actor:'Delivery team',href:'#work-delivery',label:'View delivery'};
  }
  if(w.productionHold)return {title:'Production is on hold',detail:'The team must resolve the recorded hold before the job can advance. Ask for an update in the project conversation.',actor:'Production team',href:'#work-delivery',label:'View progress'};

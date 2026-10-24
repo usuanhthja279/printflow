@@ -154,3 +154,20 @@ test('customer next action follows workflow codes for amendments, proof rejectio
  await check({proofDecision:'NONE',proofScanState:'REJECTED'},'The team needs to replace the artwork file');
  await check({proofDecision:'APPROVE',proofForCurrentAgreement:false,proofScanState:'CLEAN'},'Your revised agreement needs an updated proof');
 });
+
+test('artwork workspace expands only before fulfilment starts',async({page})=>{
+ const {setWorkflow}=await fixture(page);setWorkflow({fulfilmentState:'NOT_STARTED'});await page.goto('/customer/work/'+id);
+ const artwork=page.locator('#work-artwork');await expect(artwork.getByRole('region',{name:'Design proofs',exact:true})).toBeVisible();
+ setWorkflow({fulfilmentState:'PRODUCTION',productionStage:'PRINTING'});await page.reload();
+ const history=artwork.locator('details.workflow-history');await expect(history.locator('summary')).toHaveText('Approved artwork and review history');await expect(history).not.toHaveAttribute('open','');
+});
+
+test('ready-for-dispatch payment exceptions explain their blocking reason',async({page})=>{
+ const {setWorkflow}=await fixture(page);await page.goto('/customer/work/'+id);
+ const next=page.getByRole('region',{name:'Your next action',exact:true});
+ const check=async(paymentCode:CustomerWorkflow['paymentCode'],expected:string)=>{setWorkflow({fulfilmentState:'READY',productionStage:'READY',paymentCode});await page.reload();await expect(next).toContainText(expected);};
+ await check('BALANCE_DUE','Your balance is due before dispatch');
+ await check('OVERPAID','Payment reconciliation is needed before dispatch');
+ await check('TERMS_PENDING','Payment terms need confirmation before dispatch');
+ await check('PAID_IN_FULL','Preparing your delivery');
+});
