@@ -4,8 +4,9 @@ import type {Lead} from '@/lib/staff';
 import {PRODUCT_NAME} from '@/lib/api';
 import {api} from '@/lib/api';
 import {printReference} from '@/lib/references';
+import {needsQcReworkAttention} from '@/lib/production';
 
-type ProductionJob={id:string;stage:string;fulfilment:string;hold_reason:string|null;rework_count:number;dispatch_blockers?:string[]};
+type ProductionJob={id:string;stage:string;fulfilment:string;hold_reason:string|null;rework_count:number;active_rework?:boolean;dispatch_blockers?:string[]};
 type OwnerSnapshot={jobs:ProductionJob[];pendingAssignmentCount:number};
 const statusName:Record<string,string>={NEW:'New enquiry',REVIEWING:'Quotation preparation',QUOTED:'Customer decision',IN_PROGRESS:'Live work',CLOSED:'Closed'};
 
@@ -19,7 +20,7 @@ export default function OwnerActionCentre({items,onOpen,owner=false,onQueueFilte
  const jobs=snapshot?.jobs||[];
  const operational=jobs.filter(j=>j.stage==='WAITING_RELEASE').length;
  const held=jobs.filter(j=>!!j.hold_reason).length;
- const qcAttention=jobs.filter(j=>!j.hold_reason&&(j.stage==='QC'||j.rework_count>0)).length;
+ const qcAttention=jobs.filter(needsQcReworkAttention).length;
  const dispatchBlocked=jobs.filter(j=>j.fulfilment==='READY'&&(j.dispatch_blockers?.length||0)>0).length;
  const cards=[
   {label:'New enquiries',value:items.filter(x=>x.status==='NEW').length,detail:'Business review',activate:()=>onQueueFilter?.('NEW'),tone:'intake'},

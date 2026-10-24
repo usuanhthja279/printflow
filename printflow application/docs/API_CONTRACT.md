@@ -228,3 +228,5 @@ No HTTP contract changed for workflow redesign Batch 1. Existing work, design, p
 ### 25 October Batch 2 correction-pass contract notes
 
 `GET /v1/production/queue` continues to scope operator jobs and omit owner-only readiness fields. The UI treats absent payment, invoice and evidence fields as unavailable and presents the existing permitted photo endpoint’s evidence separately. For owners, `payment_terms_current` and release/dispatch blocker arrays are advisory. `Payments.require()` and production endpoints remain authoritative; a paid-in-full ledger state without current terms is `TERMS_PENDING` and cannot pass release/dispatch validation. See [Batch 2 correction verification](WORKFLOW_REDESIGN_BATCH2_CORRECTIONS.md).
+
+Batch 2 QC attention: owner production queue responses include historical `rework_count` and a separate `active_rework` advisory. The latter combines recorded rework history with the current production stage (PRINTING, FINISHING or QC); operators receive neither field. QC/rework attention includes jobs currently in QC or active rework and excludes held jobs. This is read-only queue metadata and does not alter production transitions.

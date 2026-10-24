@@ -149,3 +149,5 @@ Customer work: reference-aware next action + five stages + sticky right-hand por
 ## 25 October workflow redesign — Batch 2
 
 Owner enquiry screen adds live action counts for quotes, customer decisions, designer assignment, release, production exceptions and dispatch blockers, with direct links into filtered queues. Production queue filters cover release, unassigned, hold, QC/rework and dispatch blockers; desktop lanes fit the available width, while mobile keeps a single-column board and stage selector. Job drawer shows reason-based release/dispatch checks and existing role-gated production controls. Screenshot gallery and view significance: [Batch 2 evidence](WORKFLOW_REDESIGN_BATCH2.md).
+
+Batch 2 final correction: owner production filters and dashboard counts share the QC/rework predicate; historical rework remains an audit badge. See [final verification and visual evidence](WORKFLOW_REDESIGN_BATCH2_FINAL.md).

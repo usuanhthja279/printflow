@@ -6,8 +6,9 @@ import FulfilmentPanel from './FulfilmentPanel';
 import StaffJobAssignments from './StaffJobAssignments';
 import {ProductionJobCard,ReadinessChecklist} from './WorkflowUI';
 import {matchesQueueSearch,printReference} from '@/lib/references';
+import {needsQcReworkAttention} from '@/lib/production';
 
-type Job={id:string;public_id:string;product_code:string;quantity:number;stage:string;fulfilment:string;operator_name:string|null;operator_id?:string|null;machine:string|null;priority:string|null;due_date:string|null;hold_reason:string|null;rework_count?:number;payment_code?:string|null;payment_terms_current?:boolean;release_blockers?:string[];dispatch_blockers?:string[];current_proof_approved?:boolean;current_invoice_issued?:boolean;photos_required?:boolean;pickup_evidence_state?:string|null;quotation_amendment_open?:boolean};
+type Job={id:string;public_id:string;product_code:string;quantity:number;stage:string;fulfilment:string;operator_name:string|null;operator_id?:string|null;machine:string|null;priority:string|null;due_date:string|null;hold_reason:string|null;rework_count?:number;active_rework?:boolean;payment_code?:string|null;payment_terms_current?:boolean;release_blockers?:string[];dispatch_blockers?:string[];current_proof_approved?:boolean;current_invoice_issued?:boolean;photos_required?:boolean;pickup_evidence_state?:string|null;quotation_amendment_open?:boolean};
 type Board={owner:boolean;jobs:Job[]};
 const columns=[['WAITING_RELEASE','Awaiting release'],['QUEUED','Queued'],['PRINTING','Printing'],['FINISHING','Finishing'],['QC','Quality check'],['READY','Ready / delivery']];
 const filters=[['ALL','All jobs'],['WAITING_RELEASE','Awaiting release'],['UNASSIGNED','Unassigned'],['HOLD','On hold'],['QC','QC / rework'],['BLOCKED_DISPATCH','Dispatch blocked'],['URGENT','Urgent']];
@@ -40,12 +41,12 @@ export default function ProductionBoard({initialFilter='ALL'}:{initialFilter?:st
   if(filter==='WAITING_RELEASE')return j.stage==='WAITING_RELEASE';
   if(filter==='UNASSIGNED')return j.stage!=='WAITING_RELEASE'&&!j.operator_id&&!j.operator_name;
   if(filter==='HOLD')return !!j.hold_reason;
-  if(filter==='QC')return !j.hold_reason&&(j.stage==='QC'||(j.rework_count||0)>0);
+  if(filter==='QC')return needsQcReworkAttention(j);
   if(filter==='BLOCKED_DISPATCH')return isDispatchBlocked(j);
   if(filter==='URGENT')return j.priority==='URGENT';
   return true;
  }),[searchResults,filter]);
- const counts=useMemo(()=>({release:searchResults.filter(j=>j.stage==='WAITING_RELEASE').length,unassigned:searchResults.filter(j=>j.stage!=='WAITING_RELEASE'&&!j.operator_id&&!j.operator_name).length,hold:searchResults.filter(j=>!!j.hold_reason).length,qc:searchResults.filter(j=>!j.hold_reason&&(j.stage==='QC'||(j.rework_count||0)>0)).length,dispatch:searchResults.filter(isDispatchBlocked).length,urgent:searchResults.filter(j=>j.priority==='URGENT').length}),[searchResults]);
+ const counts=useMemo(()=>({release:searchResults.filter(j=>j.stage==='WAITING_RELEASE').length,unassigned:searchResults.filter(j=>j.stage!=='WAITING_RELEASE'&&!j.operator_id&&!j.operator_name).length,hold:searchResults.filter(j=>!!j.hold_reason).length,qc:searchResults.filter(needsQcReworkAttention).length,dispatch:searchResults.filter(isDispatchBlocked).length,urgent:searchResults.filter(j=>j.priority==='URGENT').length}),[searchResults]);
  function selectFilter(value:string){setFilter(value);setLane('ALL');}
  return <section className="panel production-board" aria-label="Production queue"><div className="staff-toolbar"><div><p className="overline">PRINT FLOOR / STAFF-CONFIRMED</p><h2>Production queue</h2></div><button className="btn btn-outline" onClick={()=>load().catch(()=>setError('Could not refresh production.'))}>Refresh production queue</button></div>
  <p className="hint">{data?.owner?'Release approved work and coordinate each handoff.':'Only jobs assigned to your printer account appear here.'} Latest 200 visible active projects; machine labels do not reserve capacity.</p>

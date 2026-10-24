@@ -159,3 +159,7 @@ PF-300/PF-330 owner operations: actionable dashboard counts and inbox, owner-onl
 ### 25 October workflow redesign — Batch 2 correction pass
 
 Focused corrections align operator-visible readiness with role-scoped API fields, require current payment terms in owner release/dispatch advisories, disjoint HOLD from QC/rework, align unassigned counts with filters, refresh selected queue jobs and owner summaries, and label waived pickup photos distinctly from scanned evidence. Phone production lane navigation uses compact horizontal chips. Existing authorization, revision checks and backend production/payment/evidence validation remain authoritative; no Batch 3 work or schema/state transition was added. Focused regression tests and inspected before/after browser evidence: [correction-pass report](WORKFLOW_REDESIGN_BATCH2_CORRECTIONS.md).
+
+### Batch 2 final QC/rework attention correction
+
+Owner queue adds `active_rework`, derived from historical rework events and current active production stages. Shared UI predicates keep held jobs in HOLD, current QC and active rework in attention, and READY historical rework out of attention while preserving its audit badge. Operator queue omits this owner metadata. No migration, state transition, authorization or production gate changed. Verification: [Batch 2 final correction](WORKFLOW_REDESIGN_BATCH2_FINAL.md).
