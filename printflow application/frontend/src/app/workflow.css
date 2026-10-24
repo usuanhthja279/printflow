@@ -82,7 +82,7 @@ details.panel.workflow-history { padding:12px 24px; }
 .command-heading h2 { font-size:19px; margin:4px 0; }
 .command-heading .overline { font-size:9px; color:#71849a; letter-spacing:1.3px; margin:0; }
 .command-scope { color:#61788f; font-size:10px; border:1px solid #e2e9f0; border-radius:20px; padding:6px 10px; }
-.owner-command-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
+.owner-command-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; }
 .owner-command-card { min-width:0; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:7px; padding:14px; border:1px solid #dfe6ee; border-radius:11px; background:#fff; color:var(--ink); cursor:pointer; transition:border-color .15s,transform .15s,box-shadow .15s; }
 .owner-command-card:hover:not(:disabled),.owner-command-card:focus-visible { transform:translateY(-2px); border-color:#829fcb; box-shadow:0 5px 16px #132b4010; }
 .owner-command-card:disabled { opacity:.72; cursor:default; }
@@ -90,6 +90,7 @@ details.panel.workflow-history { padding:12px 24px; }
 .owner-command-card>strong { font-size:24px; line-height:1; }
 .owner-command-card>small { font-size:9px; line-height:1.4; color:#728398; }
 .command-hold>strong,.command-dispatch>strong { color:#a4583c; }
+.command-quality>strong { color:#6553a3; }
 .command-footnote { margin:11px 0 0; font-size:9px; color:#71849a; }
 .action-centre>header { display:flex; gap:16px; justify-content:space-between; align-items:center; }
 .action-centre h2 { font-size:18px; margin:8px 0; }
@@ -138,7 +139,7 @@ details.panel.workflow-history { padding:12px 24px; }
 .production-card.job-held { border-left:3px solid #c78352; }
 .production-lane .queue-pill { white-space:normal; }
 .lane-empty { font-size:11px; padding:20px 0; color:#728699; text-align:center; }
-.mobile-lane-select { display:none; }
+.mobile-production-lanes { display:none; }
 .workspace-dialog.dialog-drawer { position:fixed; inset:0 0 0 auto; margin:0; width:min(720px,65vw); max-width:none; height:100dvh; max-height:100dvh; border-radius:16px 0 0 16px; }
 .workspace-dialog.dialog-studio { width:calc(100vw - 32px); max-width:1800px; height:calc(100dvh - 32px); max-height:calc(100dvh - 32px); margin:auto; }
 .dialog-studio>.dialog-heading { padding:14px 24px; }
@@ -146,6 +147,7 @@ details.panel.workflow-history { padding:12px 24px; }
 .job-drawer-heading { padding:4px 0 22px; border-bottom:1px solid var(--line); margin-bottom:24px; }
 .job-drawer-heading h2 { margin:8px 0; font-size:26px; }
 .job-drawer-heading>p:last-child { font-size:12px; color:#65798d; }
+.owner-readiness-notice { margin:0 0 18px; padding:12px 14px; border:1px solid #e6d5a8; border-radius:9px; background:#fff9e9; color:#765a1b; font-size:12px; line-height:1.5; }
 .dialog-drawer .fulfilment-panel { padding:0; border:0; box-shadow:none; }
 .operation-steps { gap:6px; padding:0; flex-wrap:wrap; }
 .operation-steps li { font-size:10px; padding:8px 10px; border-radius:6px; background:#edf2f7; }
@@ -261,7 +263,10 @@ details.panel.workflow-history { padding:12px 24px; }
  .production-board .catalogue-search { grid-column:1/-1; }
  .production-board .field { min-width:0; }
  .production-board .field select { width:100%; }
- .mobile-lane-select { display:grid; }
+ .mobile-production-lanes { display:flex; gap:7px; overflow-x:auto; padding:2px 0 10px; margin:0 0 8px; scrollbar-width:thin; }
+ .mobile-production-lanes button { flex:none; display:flex; align-items:center; gap:7px; min-height:38px; padding:7px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); font-size:10px; white-space:nowrap; }
+ .mobile-production-lanes button[aria-pressed=true] { border-color:#6686c0; background:#edf3ff; color:#214a8d; }
+ .mobile-production-lanes button span { display:inline-grid; place-items:center; min-width:19px; height:19px; padding:0 4px; border-radius:50%; background:#e7edf5; font-weight:700; }
  .production-lanes { display:flex; flex-direction:column; overflow:visible; gap:16px; }
  .production-lane { width:100%; min-height:0; padding:12px; }
  .production-lane[data-mobile-visible=false] { display:none; }

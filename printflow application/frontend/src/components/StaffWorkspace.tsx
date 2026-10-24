@@ -95,7 +95,7 @@ export default function StaffWorkspace(){
    {staff.role==='OWNER'&&tab==='STAFF'&&<details className="workflow-history"><summary>Administration · privacy requests</summary><p>Review customer information export and erasure requests.</p><OwnerPrivacy/></details>}
    {staff.role==='OWNER'&&tab==='EMAIL'&&<MailActivity/>}
    <div hidden={tab!=='ENQUIRIES'}>
-   {notice&&<p className="panel" role="status">{notice}</p>}<OwnerActionCentre items={items} owner={staff.role==='OWNER'} onQueueFilter={status=>{setTab('ENQUIRIES');setFilter('ALL');setStatusFilter(status);}} onProductionFilter={filter=>{setProductionFocus(filter);setTab('PRODUCTION');}} onDesignRouting={()=>setTab('DESIGN ROUTING')} onOpen={lead=>{setSelected(lead);setDetailOpen(true);setError('');}}/>
+   {notice&&<p className="panel" role="status">{notice}</p>}<OwnerActionCentre items={items} owner={staff.role==='OWNER'} onRefresh={refresh} onQueueFilter={status=>{setTab('ENQUIRIES');setFilter('ALL');setStatusFilter(status);}} onProductionFilter={filter=>{setProductionFocus(filter);setTab('PRODUCTION');}} onDesignRouting={()=>setTab('DESIGN ROUTING')} onOpen={lead=>{setSelected(lead);setDetailOpen(true);setError('');}}/>
    {adding&&<form onSubmit={add} className="panel staff-new"><h2>Add an enquiry</h2><p>Record a walk-in, call or message. Channel selection records the source; no message is sent.</p><div className="form-grid">
     <label className="field">Customer name<input required maxLength={140} value={newLead.customerName} onChange={e=>setNewLead({...newLead,customerName:e.target.value})}/></label>
     <label className="field">Enquiry source<select value={source} onChange={e=>setSource(e.target.value)}>{sources.map(s=><option key={s}>{s}</option>)}</select></label>

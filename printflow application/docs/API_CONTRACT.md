@@ -224,3 +224,7 @@ Owner-authorized automatic designer routing, project-level production queues and
 ## 25 October workflow redesign — Batch 1
 
 No HTTP contract changed for workflow redesign Batch 1. Existing work, design, payments, production and photo responses drive the new views. Photo display_name is the original filename, not uploader identity. Work id is the internal workspace identifier, not the public PF enquiry reference. Neither missing field is invented in the UI. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).
+
+### 25 October Batch 2 correction-pass contract notes
+
+`GET /v1/production/queue` continues to scope operator jobs and omit owner-only readiness fields. The UI treats absent payment, invoice and evidence fields as unavailable and presents the existing permitted photo endpoint’s evidence separately. For owners, `payment_terms_current` and release/dispatch blocker arrays are advisory. `Payments.require()` and production endpoints remain authoritative; a paid-in-full ledger state without current terms is `TERMS_PENDING` and cannot pass release/dispatch validation. See [Batch 2 correction verification](WORKFLOW_REDESIGN_BATCH2_CORRECTIONS.md).

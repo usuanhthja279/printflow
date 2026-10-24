@@ -53,3 +53,7 @@ The before set comes from the checked-in Batch 1 gallery (1366×900 desktop and 
 Queue readiness is informational and can change between refresh and action; the existing server checks remain the source of truth. Counts reflect the authorized queue’s current 200-job limit and the current visible enquiry page. This batch does not add shop capacity planning, inventory, machine reservations, production splitting, live GPS, or multi-shipment tracking. The screenshots cover role-based workflow states with synthetic API data; the Gradle integration test covers the changed owner/operator response and production gates against native PostgreSQL.
 
 The complete screenshot package is `output/JD-Printex-Batch2-Visual-Evidence.zip`.
+
+## Focused correction pass
+
+Operator status copy no longer implies dispatch clearance when owner-only checks are omitted. Payment-term readiness, HOLD/QC split, unassigned counts, refresh behavior and photo waivers are corrected with regression coverage. Evidence and test results: [correction pass](WORKFLOW_REDESIGN_BATCH2_CORRECTIONS.md).
