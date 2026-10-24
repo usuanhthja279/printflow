@@ -147,3 +147,8 @@ Reference-inspired UI covers interactive public print previews, searchable enabl
 ## 24 October operations continuation
 
 Owner-authorized automatic designer routing, project-level production queues and private delivery photo evidence are implemented. PF-300/PF-330 now include printing/finishing/QC/rework/hold progression, scoped printer assignment and pickup/transit/delivery evidence. Existing proof, quotation, finance and dispatch gates remain. See OPERATIONS_WORKFLOW.md for APIs, migrations V24/V25, role scopes, upload limits, notifications and the focused Gradle/browser commands. Full shop-floor routing, inventory, capacity reservations, GPS and partial dispatch remain separate.
+
+
+## 25 October workflow redesign — Batch 1
+
+PF-300/PF-320/PF-330 presentation: shared next-action/readiness components, exact-revision proof studio, owner scoped intake exceptions, production detail drawer/mobile lane selector, and evidence-first delivery. Customer next actions now use machine-readable scoped workflow states; dispatch pickup evidence and delivery confirmation evidence are reported separately, including missing, pending-scan and rejected files. No status transition, authorization or server-side workflow gate is changed. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

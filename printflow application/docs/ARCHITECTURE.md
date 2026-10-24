@@ -168,3 +168,8 @@ Owner-configured advance/credit rules, immutable verified receipts/corrections, 
 ## 24 October operations continuation
 
 Owner-authorized automatic designer routing, project-level production queues and private delivery photo evidence are implemented. PF-300/PF-330 now include printing/finishing/QC/rework/hold progression, scoped printer assignment and pickup/transit/delivery evidence. Existing proof, quotation, finance and dispatch gates remain. See OPERATIONS_WORKFLOW.md for APIs, migrations V24/V25, role scopes, upload limits, notifications and the focused Gradle/browser commands. Full shop-floor routing, inventory, capacity reservations, GPS and partial dispatch remain separate.
+
+
+## 25 October workflow redesign — Batch 1
+
+WorkflowUI and workflow.css provide presentation shared across existing client components. Readiness derives only from current authorized DTOs; additive work DTO workflow codes support customer next-action guidance, with no new endpoint, workflow status, schema, authentication or notification contract. Production and proof mutation bodies retain explicit confirmation and revision/hash/page data. Studio conflicts reset local review confirmation; native dialog focus/escape behavior remains. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

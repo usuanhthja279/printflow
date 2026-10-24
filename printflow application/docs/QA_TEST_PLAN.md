@@ -120,3 +120,8 @@ Reference-inspired UI covers interactive public print previews, searchable enabl
 ## 24 October operations continuation
 
 Owner-authorized automatic designer routing, project-level production queues and private delivery photo evidence are implemented. PF-300/PF-330 now include printing/finishing/QC/rework/hold progression, scoped printer assignment and pickup/transit/delivery evidence. Existing proof, quotation, finance and dispatch gates remain. See OPERATIONS_WORKFLOW.md for APIs, migrations V24/V25, role scopes, upload limits, notifications and the focused Gradle/browser commands. Full shop-floor routing, inventory, capacity reservations, GPS and partial dispatch remain separate.
+
+
+## 25 October workflow redesign — Batch 1
+
+Focused workflow-redesign.spec.ts intercepts all API traffic using synthetic DTOs: desktop/phone proof page acknowledgements and stale response, quarantine/advance blockers, scoped owner inbox, production HOLD/RESUME revision payloads, drawer focus/escape, dispatch failure and original scanned photo preview. These presentation tests do not claim real provider delivery or capture. Native Gradle operations regression checks the real HTTP/database gates separately. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

@@ -87,7 +87,7 @@ class StaffWorkflowIntegrationTest {
         var response=owner.send("POST","/api/v1/staff/enquiries",body,true);
         assertEquals(201,response.statusCode());created=json.readValue(response.body(),CreatedLead.class);
         assertEquals(first,created.lead().assignedStaffId());assertEquals("PHONE",created.lead().source());
-        assertFalse(created.trackingToken().isBlank());
+        assertFalse(created.trackingToken().isBlank());jdbc.update("update enquiries set status='REVIEWING' where id=?",created.lead().id());try{var byReference=owner.send("GET","/api/v1/staff/enquiries?search=PF-"+created.lead().publicId().toString().replace("-","").substring(0,8),null,false);assertEquals(200,byReference.statusCode());assertTrue(byReference.body().contains(created.lead().id().toString()),byReference.body());var plainSearch=owner.send("GET","/api/v1/staff/enquiries?search="+created.lead().publicId().toString().replace("-","").substring(0,8),null,false);assertFalse(plainSearch.body().contains(created.lead().id().toString()),plainSearch.body());}finally{jdbc.update("update enquiries set status='NEW' where id=?",created.lead().id());}
     }
     @Test @Order(3) void ownershipAndConcurrentRevisionProtection()throws Exception {
         other=new Client();assertEquals(200,other.login(secondName,password));
