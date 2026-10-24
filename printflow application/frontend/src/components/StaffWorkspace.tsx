@@ -1,5 +1,5 @@
 'use client';
-import ProductionBoard from './ProductionBoard';import DesignerRoutingPanel from './DesignerRoutingPanel';
+import OwnerActionCentre from './OwnerActionCentre';import ProductionBoard from './ProductionBoard';import DesignerRoutingPanel from './DesignerRoutingPanel';
 import WorkspaceOverview from './WorkspaceOverview';import EnquiryStages from './EnquiryStages';import MailActivity from './MailActivity';
 import IntakeActions from './IntakeActions';
 import AppearanceEditor from './AppearanceEditor';
@@ -73,28 +73,28 @@ export default function StaffWorkspace(){
  const owned=selected?.assignedStaffId===staff?.id;
  if(loading)return <section className="page-section"><div className="container"><p role="status">Opening staff workspace…</p></div></section>;
  return <section className="page-section business-bg"><div className="container">
-  <div className="page-intro business-intro"><p className="overline">J.D.PRINTEX / STAFF</p><h1>{staff?.role==='DESIGNER'?'Design workspace.':staff?.role==='OPERATOR'?'Printing workspace.':staff?.role==='DELIVERY'?'Delivery workspace.':staff&&!['OWNER','SALES'].includes(staff.role)?'Your assigned work.':<>Enquiries &amp; <em>follow-ups.</em></>}</h1><p>{staff&&!['OWNER','SALES'].includes(staff.role)?'Your role, assigned tasks and owner-granted tools.':'Review new enquiries and keep every follow-up on time.'}</p></div>
+  <header className="page-intro business-intro"><p className="overline">J.D.PRINTEX / {staff?.role||'STAFF'}</p><h1>{staff&&['OWNER','SALES'].includes(staff.role)?({ENQUIRIES:'Enquiries & follow-ups',PRODUCTION:'Print floor',CONTACTS:'Customer contacts','DESIGN ROUTING':'Design coordination',STAFF:'Team & access',PRODUCTS:'Product catalogue',EMAIL:'Email activity'}[tab]||'Workspace'):staff?.role==='DESIGNER'?'Design workspace':staff?.role==='OPERATOR'?'Printing workspace':staff?.role==='DELIVERY'?'Delivery workspace':staff?'Your assigned work':'Welcome to your workspace'}</h1><p>{staff&&['OWNER','SALES'].includes(staff.role)?'One project record. Clear responsibilities at every handoff.':'Your role, assigned tasks and authorized tools.'}</p></header>
   {!staff?<form onSubmit={login} className="panel owner-login auth-card"><h2>Staff sign in</h2><p>Use your individual staff credentials to open your workspace.</p>
    <label className="field">Staff username<input required maxLength={140} autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)}/></label>
    <label className="field">Password<input required type="password" maxLength={72} autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)}/></label>
    <button className="btn btn-ink" disabled={busy}>{busy?'Signing in…':'Sign in'}</button>
   </form>:staff.mfaRequired||staff.mustChangePassword?<AccountAccess staff={staff} logout={logout} done={async user=>{setStaff(user);if(!user.mfaRequired&&!user.mustChangePassword&&['OWNER','SALES'].includes(user.role))await refresh();}}/>:!['OWNER','SALES'].includes(staff.role)?<SpecialistWorkspace staff={staff}/>:<>
-   <WorkspaceOverview label="Your visible queue at a glance" items={[
+   {tab==='ENQUIRIES'&&<WorkspaceOverview label="Your visible queue at a glance" items={[
     {label:'New intake',value:items.filter(i=>i.status==='NEW').length,detail:'Awaiting business review',action:()=>{setTab('ENQUIRIES');setStatusFilter('NEW');}},
     {label:'Preparing quotes',value:items.filter(i=>i.status==='REVIEWING').length,detail:'Scope and pricing',action:()=>{setTab('ENQUIRIES');setStatusFilter('REVIEWING');}},
     {label:'With customers',value:items.filter(i=>i.status==='QUOTED').length,detail:'Quotation decisions',action:()=>{setTab('ENQUIRIES');setStatusFilter('QUOTED');}},
     {label:'Live work',value:items.filter(i=>i.status==='IN_PROGRESS').length,detail:'Design to delivery',action:()=>{setTab('ENQUIRIES');setStatusFilter('IN_PROGRESS');}}
-   ]}/>
-   <div className="staff-toolbar"><p>Signed in as <strong>{staff.username}</strong> · {staff.role}</p><div className="row-actions"><button className="btn btn-outline btn-small" disabled={busy} onClick={async()=>{setError('');try{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}catch(e){failure(e);}}}>Refresh enquiries</button><button className="btn btn-ink btn-small" disabled={busy} onClick={()=>setAdding(!adding)}>{adding?'Cancel new enquiry':'Add enquiry'}</button></div></div>
+   ]}/>}
+   <div className="staff-toolbar"><p>Signed in as <strong>{staff.username}</strong> · {staff.role}</p><div className="row-actions"><button className="btn btn-outline btn-small" disabled={busy} onClick={async()=>{setError('');try{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}catch(e){failure(e);}}}>Refresh enquiries</button><button className="btn btn-ink btn-small" disabled={busy} onClick={()=>{setTab('ENQUIRIES');setAdding(!adding);}}>{adding?'Cancel new enquiry':'Add enquiry'}</button></div></div>
    <div className="workspace-modules" role="navigation" aria-label="Workspace modules">{['ENQUIRIES',...(staff.role==='OWNER'||staff.contactsAccess?['CONTACTS']:[]),...(staff.role==='OWNER'?['PRODUCTION','DESIGN ROUTING','STAFF','PRODUCTS','EMAIL']:[])].map(t=><button key={t} className={tab===t?'btn btn-ink':'btn btn-outline'} onClick={()=>setTab(t)}>{t}</button>)}</div>
    {tab==='CONTACTS'&&(staff.role==='OWNER'||staff.contactsAccess)&&<ContactsWorkspace lead={selected} linked={async()=>{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}}/>}
    {staff.role==='OWNER'&&tab==='PRODUCTION'&&<ProductionBoard/>}{staff.role==='OWNER'&&tab==='DESIGN ROUTING'&&<DesignerRoutingPanel/>}
    {staff.role==='OWNER'&&tab==='STAFF'&&<StaffAdministration ownerId={staff.id} reauthenticate={()=>setStaff({...staff,mfaRequired:true})}/>}
    {staff.role==='OWNER'&&tab==='PRODUCTS'&&<ProductSettings/>}
-   {staff.role==='OWNER'&&<details className="workflow-history"><summary>Administration · privacy requests</summary><p>Review customer information export and erasure requests.</p><OwnerPrivacy/></details>}
+   {staff.role==='OWNER'&&tab==='STAFF'&&<details className="workflow-history"><summary>Administration · privacy requests</summary><p>Review customer information export and erasure requests.</p><OwnerPrivacy/></details>}
    {staff.role==='OWNER'&&tab==='EMAIL'&&<MailActivity/>}
    <div hidden={tab!=='ENQUIRIES'}>
-   {notice&&<p className="panel" role="status">{notice}</p>}<div className="metric-grid"><div className="metric"><span>Loaded enquiries</span><strong>{items.length}</strong></div><div className="metric"><span>Overdue follow-ups</span><strong>{items.filter(overdue).length}</strong></div><div className="metric"><span>Unassigned</span><strong>{items.filter(x=>!x.assignedStaffId).length}</strong></div><div className="metric"><span>Assigned to me</span><strong>{items.filter(x=>x.assignedStaffId===staff.id).length}</strong></div></div>
+   {notice&&<p className="panel" role="status">{notice}</p>}<OwnerActionCentre items={items} onOpen={lead=>{setSelected(lead);setDetailOpen(true);setError('');}}/>
    {adding&&<form onSubmit={add} className="panel staff-new"><h2>Add an enquiry</h2><p>Record a walk-in, call or message. Channel selection records the source; no message is sent.</p><div className="form-grid">
     <label className="field">Customer name<input required maxLength={140} value={newLead.customerName} onChange={e=>setNewLead({...newLead,customerName:e.target.value})}/></label>
     <label className="field">Enquiry source<select value={source} onChange={e=>setSource(e.target.value)}>{sources.map(s=><option key={s}>{s}</option>)}</select></label>

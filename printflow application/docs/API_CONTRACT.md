@@ -215,3 +215,8 @@ Workflow errors now return a no-store structured ACTION_NOT_AVAILABLE message wi
 ## 24 October operations continuation
 
 Owner-authorized automatic designer routing, project-level production queues and private delivery photo evidence are implemented. PF-300/PF-330 now include printing/finishing/QC/rework/hold progression, scoped printer assignment and pickup/transit/delivery evidence. Existing proof, quotation, finance and dispatch gates remain. See OPERATIONS_WORKFLOW.md for APIs, migrations V24/V25, role scopes, upload limits, notifications and the focused Gradle/browser commands. Full shop-floor routing, inventory, capacity reservations, GPS and partial dispatch remain separate.
+
+
+## 25 October workflow redesign — Batch 1
+
+No HTTP contract changed for workflow redesign Batch 1. Existing work, design, payments, production and photo responses drive the new views. Photo display_name is the original filename, not uploader identity. Work id is the internal workspace identifier, not the public PF enquiry reference. Neither missing field is invented in the UI. See [implementation map and evidence](WORKFLOW_REDESIGN_BATCH1.md).

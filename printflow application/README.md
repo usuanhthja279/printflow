@@ -1,3 +1,5 @@
+> **25 October workflow redesign — Batch 1:** action-oriented customer hub, full-width proof studio, scoped owner inbox, compact production queue/detail drawer and evidence-first delivery. [Implementation and focused checks](docs/WORKFLOW_REDESIGN_BATCH1.md). Existing server gates and providers are unchanged.
+
 > **Operations continuation — 24 October:** automatic designer routing, scoped printer production queues and private pickup/transit/delivery photo evidence are implemented. See [workflow and review steps](docs/OPERATIONS_WORKFLOW.md). Native Gradle, no Docker; verification is limited to the new operations slice and one browser journey.
 
 > **UI review handoff — 24 October:** reference-inspired interactive public pages, scoped dashboard summaries, artwork sample search/comments, wide work/conversation layout and phone navigation are ready for manual review. See [implementation notes](docs/IMPLEMENTATION_REVIEW.md). Minimum final checks only; real Razorpay capture remains unverified.
