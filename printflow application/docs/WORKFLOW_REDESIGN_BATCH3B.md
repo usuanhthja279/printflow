@@ -36,7 +36,7 @@ Persistent notices use event envelope version 1: server event UUID, type, projec
 
 ## Verification
 
-Commands run from `printflow application/` unless stated otherwise. Native database URL in `backend/src/main/resources/application.yml` defaults to `jdbc:postgresql://localhost:5434/printflow`; `DB_URL` can override it. The preflight checked ports 5434 and 5432; both were unavailable. No Docker was used.
+Commands run from `printflow application/` unless stated otherwise. Native database URL in `backend/src/main/resources/application.yml` defaults to `jdbc:postgresql://localhost:5434/printflow`; `DB_URL` can override it. The preflight checked ports 5434 and 5432; both were unavailable. No PostgreSQL service, executable (`psql`, `postgres`, `pg_ctl`), standard installation directory or PostgreSQL install registry entry was found. A focused `gradlew.bat bootRun` reached Spring/Tomcat initialization and exited during Flyway because the connection to `localhost:5434` was refused (`SQL State 08001`). This confirms the blocker occurs before API startup completes. No Docker was used.
 
 | Check | Result |
 |---|---|
@@ -45,6 +45,7 @@ Commands run from `printflow application/` unless stated otherwise. Native datab
 | Focused desktop/mobile browser tests | `PLAYWRIGHT_BASE_URL=http://localhost:3000 npm.cmd run test:e2e -- e2e/batch3-designer-workspace.spec.ts --project=desktop --project=mobile --max-failures=1` — 4 passed (designer and customer flows on desktop and mobile). Covers revision navigation, zoomed PDF/image normalized annotation coordinates, keyboard pin selection, stale approval rejection, mobile overflow, and screenshot capture. Requires the already-running local frontend; run with approved Windows execution access if Edge cannot launch inside the restricted process. |
 | Backend unit tests + integration source compilation | `gradlew.bat test integrationTestClasses` — passed; the 3 `CollaborationBrokerTest` cases passed and integration test sources compiled. |
 | PostgreSQL-backed `DesignProofIntegrationTest` and other auth/proof lifecycle tests | Not run: native PostgreSQL on both configured/default port 5434 and common port 5432 was unavailable. Source compilation is not a database test pass. |
+| Spring API startup | `gradlew.bat bootRun` — failed during Flyway initialization: connection to `localhost:5434` refused (`SQL State 08001`). No local PostgreSQL installation or service was available to start. |
 | Real backend, two independently authenticated browser contexts | Not run: API/PostgreSQL services are unavailable. No live participants or event delivery are claimed. |
 
 The focused browser suite uses intercepted synthetic REST/file fixtures. It verifies desktop/mobile designer and customer proof UI regressions, separate role data, exact revision/page comment navigation, zoomed PDF/image annotation coordinates, keyboard pin activation, stale-revision rejection and mobile overflow. It does not test actual STOMP delivery or backend authorization. Browser launch first failed in the restricted process before test startup; the documented approved retry ran the actual spec. During that run, the customer collaboration provider's named export import was corrected. The PDF coordinate assertion was also made against its normalized inline values, which are stable across desktop/mobile device scale factors.
