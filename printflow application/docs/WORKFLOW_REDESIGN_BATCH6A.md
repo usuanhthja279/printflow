@@ -77,3 +77,46 @@ The images were opened and inspected. The desktop grid keeps the canvas and laye
 - The canvas can reuse only clean project-scoped PNG/JPEG artifacts. PDF files are not rasterized into editable layers.
 - Presence is shown through the existing collaboration provider, while document changes use optimistic saves; no live canvas synchronization or merge is claimed.
 - Production publishing still requires the existing accepted quote, designer authorization, malware scan, no-fulfilment-release rule and exact proof decision workflow. Local UI screenshots use synthetic APIs; backend scope/export/publish was verified separately against native PostgreSQL.
+
+## Batch 6A correction and completion pass — 2026-10-26
+
+### Corrections implemented
+
+- Corrected PDF text placement to convert the editor's top-left millimetre coordinates to PDF points once. The baseline uses the shared font ascent; positive SVG clockwise rotation is reproduced around the same layer center in PDF coordinates.
+- The editor and PDF exporter now use the same bundled Liberation Sans regular font. The authenticated `/api/v1/design/editor-font` route serves the exact PDFBox font resource to the SVG editor. Unsupported glyphs are rejected with a clear validation error instead of producing a misleading proof.
+- Both renderers wrap at word boundaries (and long words by glyph) using the layer's measured width, preserve explicit line breaks, and clip ink to the text layer bounds. Line count is clipped to the configured text-box height.
+- Safe-margin editing now clamps to half the shorter trim dimension, including when canvas dimensions are reduced.
+- Drag and resize history records the document snapshot from pointer-down. Desktop browser coverage moves and resizes layers with actual mouse pointer input, then verifies Undo and Redo restore the respective geometry.
+- Simultaneous first saves rely on the existing unique enquiry constraint with `ON CONFLICT DO NOTHING`; the losing request receives the normal 409 conflict response. PostgreSQL coverage creates a fresh draft race and verifies one 200, one 409, and one saved row.
+- Added a browser raster comparison: the Java PDF unit test emits a test-only PDF under `backend/build/test-output/`; Playwright renders that actual exporter output with PDF.js and compares its foreground pixels with the same document rendered by the editor SVG at the PDF's physical page scale. The test requires foreground intersection-over-union above 0.72. The fixture is generated during tests and is not a committed artifact.
+
+### Implemented MVP and advanced work still pending
+
+| Implemented in Batch 6A | Advanced/editor-production work pending |
+|---|---|
+| One-page print canvas with trim dimensions in mm, configurable bleed and safe margin | Multipage documents, page rearrangement and spreads |
+| Shared regular font, explicit newlines, width-based wrapping, text-box clipping and unsupported-glyph rejection | Font chooser, bold/italic, reliable bidi/complex-script layout, per-font licensing and font embedding policy |
+| Text, rectangle, ellipse and scanned project PNG/JPEG layers; layer order, move, resize and rotation | Crop/contain controls, richer vector tools, PDF artwork import/rasterization and image preflight |
+| Alignment guides, zoom, pan, undo/redo, private save/reopen and optimistic conflicts | Snapping controls, keyboard layer manipulation, cross-session edit merging and autosave |
+| Designer export through the scanned private-artifact and immutable proof-publish workflow | CMYK/spot colors, ICC color management, PDF/X, trapping, imposition and calibrated printer output validation |
+
+The SVG/PDF comparison verifies placement and basic wrapping for the supported regular font; it does not certify a physical press result. A4 and business-card trim/bleed page sizes, top and bottom text, multiline/wrapped text, rotation, near-trim/safe-area placement and raster bounds are covered in the focused tests. Authorization, malware scanning, exact proof hashes, approval invalidation and the production-release gates remain backend controlled and unchanged.
+
+### Verification for this correction pass
+
+Commands run in the Batch 6A worktree (native PostgreSQL on port 5432, dedicated `printflow_batch6a` database, Java 21 from the installed Dragonwell JDK; no Docker):
+
+- `backend: .\\gradlew.bat test --tests 'com.printflow.files.PrintDesignPdfTest'` — PASS, 5 focused tests. Generates the transient comparison PDF in the ignored backend build directory.
+- `backend: .\\gradlew.bat integrationTest --tests 'com.printflow.DesignProofIntegrationTest.simultaneousFirstEditorDraftSavesReturnOneSuccessAndOneConflict' --tests 'com.printflow.DesignProofIntegrationTest.printEditorDraftsArePrivateRevisionCheckedAndPublishOnlyThroughImmutableProofWorkflow'` — PASS, both methods on native PostgreSQL. Covers authenticated font delivery, simultaneous first saves, private scope, stale/conflicting saves, scanned same-project assets, export, immutable publish, exact approval and edit rejection after approval.
+- `frontend: npm.cmd run typecheck` — PASS.
+- `frontend: PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx.cmd playwright test e2e/batch6a-print-editor.spec.ts --project=desktop --project=mobile --max-failures=1` — PASS, 4 cases. Includes PDF/SVG pixel overlap, desktop pointer drag/resize Undo/Redo, customer private-draft restrictions and mobile overflow assertion. API data is synthetic; these are not authenticated real-backend browser journeys.
+- `frontend: PRINTFLOW_NEXT_DIST_DIR=.next-batch6a-correction npm.cmd run build` — PASS; Next.js production compilation, TypeScript, static generation and route finalization completed. Generated `tsconfig.json` and `next-env.d.ts` path edits were reverted.
+
+Refreshed screenshots are stored under `output/batch6a-visual-evidence/` and inspected after the final desktop/mobile test run. Desktop shows the design canvas beside layers and the existing conversation column. Mobile stacks editor controls and has no body-level horizontal overflow. The fixed project navigation remains horizontally scrollable on narrow screens. Synthetic test screenshots show “Reconnecting” because the fixtures deliberately reject collaboration transport; live collaboration is outside this pass.
+
+### Final verification limits
+
+- This pass does not add real-backend customer/designer browser journeys or test physical printer output. Backend authorization and proof lifecycle are covered by the focused PostgreSQL integration test; browser journeys remain mocked.
+- Only Liberation Sans regular is supported. Other fonts/styles and complex-script shaping remain pending; unsupported code points are rejected before PDF output.
+- Text wrapping is width-measured and clipped but does not provide typography controls such as kerning adjustment, widow/orphan handling or fine leading.
+- The editor remains a one-page layout MVP and does not provide CMYK/PDF-X production preflight, press trapping or imposition.

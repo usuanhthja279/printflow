@@ -31,9 +31,11 @@ public class PrintDesignPdf {
     private static final float PT_PER_MM=72f/25.4f;
     private static final long MAX_IMAGE_PIXELS=12_500_000L;
 
+    static java.io.InputStream openBundledFont(){return PrintDesignPdf.class.getResourceAsStream("/org/apache/pdfbox/resources/ttf/LiberationSans-Regular.ttf");}
+
     public byte[] create(PrintDesign.Document design,Function<UUID,byte[]> imageResolver)throws IOException {
         validate(design);
-        try(var document=new PDDocument();var output=new ByteArrayOutputStream();var fontStream=getClass().getResourceAsStream("/org/apache/pdfbox/resources/ttf/LiberationSans-Regular.ttf")){
+        try(var document=new PDDocument();var output=new ByteArrayOutputStream();var fontStream=openBundledFont()){
             PDFont font=fontStream==null?new PDType1Font(Standard14Fonts.FontName.HELVETICA):PDType0Font.load(document,fontStream);
             float bleed=(float)design.bleedMm()*PT_PER_MM;
             float pageWidth=(float)(design.widthMm()+2*design.bleedMm())*PT_PER_MM;
@@ -65,15 +67,26 @@ public class PrintDesignPdf {
     private void draw(PDPageContentStream canvas,float pageHeight,float bleed,PDFont font,PrintDesign.Element element,Map<UUID,PDImageXObject> images)throws IOException{
         float x=(float)element.xMm()*PT_PER_MM+bleed,y=(float)element.yMm()*PT_PER_MM+bleed,w=(float)element.widthMm()*PT_PER_MM,h=(float)element.heightMm()*PT_PER_MM;
         float left=x,top=y,rotation=element.rotationDegrees();
-        if(rotation!=0){canvas.saveGraphicsState();float cx=x+w/2,cy=pageHeight-(y+h/2);canvas.transform(Matrix.getRotateInstance((float)Math.toRadians(rotation),cx,cy));}
+        // SVG uses a y-down coordinate system, so positive angles turn clockwise.
+        // PDF uses y-up coordinates: negate the angle to preserve that visual direction.
+        if(rotation!=0){canvas.saveGraphicsState();float cx=x+w/2,cy=pageHeight-(y+h/2);double angle=Math.toRadians(-rotation),cos=Math.cos(angle),sin=Math.sin(angle);canvas.transform(new Matrix((float)cos,(float)sin,(float)-sin,(float)cos,(float)(cx-cos*cx+sin*cy),(float)(cy-sin*cx-cos*cy)));}
         try{
             if("TEXT".equals(element.type())){
+                // x/y in the document are the top-left in mm. Convert once to PDF points;
+                // the previous implementation multiplied this point value by PT_PER_MM a
+                // second time, which moved text far from its SVG position.
+                float topPt=top;
+                float ascent=font.getFontDescriptor().getAscent()/1000f*element.fontSizePt();
+                float baseline=pageHeight-topPt-ascent;
+                float lineHeight=element.fontSizePt()*1.25f;
+                int visibleLines=Math.max(1,(int)Math.floor(h/lineHeight));
+                var lines=wrap(font,element.text(),element.fontSizePt(),w);
+                canvas.saveGraphicsState();canvas.addRect(left,pageHeight-(topPt+h),w,h);canvas.clip();
                 canvas.beginText();canvas.setFont(font,element.fontSizePt());canvas.setNonStrokingColor(color(element.fill()));
-                String[] lines=element.text()==null?new String[]{""}:element.text().split("\\R",-1);
-                float baseline=pageHeight-top*PT_PER_MM-element.fontSizePt();
                 canvas.newLineAtOffset(left,baseline);
-                for(int i=0;i<lines.length;i++){if(i>0)canvas.newLineAtOffset(0,-element.fontSizePt()*1.25f);canvas.showText(lines[i]);}
+                for(int i=0;i<Math.min(lines.size(),visibleLines);i++){if(i>0)canvas.newLineAtOffset(0,-lineHeight);canvas.showText(lines.get(i));}
                 canvas.endText();
+                canvas.restoreGraphicsState();
             }else if("IMAGE".equals(element.type())){
                 PDImageXObject image=images.get(element.assetId());if(image==null)throw new IllegalArgumentException("Image layer reference was not resolved");
                 canvas.drawImage(image,left,pageHeight-(top+h),w,h);
@@ -84,6 +97,31 @@ public class PrintDesignPdf {
                 if(element.strokeMm()>0)canvas.fillAndStroke();else canvas.fill();
             }
         }finally{if(rotation!=0)canvas.restoreGraphicsState();}
+    }
+
+    private java.util.List<String> wrap(PDFont font,String text,float fontSize,float maxWidthPt){
+        try{
+            var result=new java.util.ArrayList<String>();
+            if(font instanceof PDType0Font embedded){for(int offset=0;offset<text.length();){int cp=text.codePointAt(offset);if(!embedded.hasGlyph(cp))throw new IllegalArgumentException("Text contains a character unsupported by the print proof font");offset+=Character.charCount(cp);}}
+            String[] paragraphs=(text==null?"":text).split("\\R",-1);
+            for(String paragraph:paragraphs){
+                if(paragraph.isEmpty()){result.add("");continue;}
+                String line="";
+                for(String word:paragraph.split("\\s+")){
+                    String candidate=line.isEmpty()?word:line+" "+word;
+                    if(font.getStringWidth(candidate)*fontSize/1000f<=maxWidthPt){line=candidate;continue;}
+                    if(!line.isEmpty()){result.add(line);line="";}
+                    String part="";
+                    for(int offset=0;offset<word.length();){int cp=word.codePointAt(offset);String character=new String(Character.toChars(cp));String next=part+character;
+                        if(!part.isEmpty()&&font.getStringWidth(next)*fontSize/1000f>maxWidthPt){result.add(part);part=character;}else part=next;
+                        offset+=Character.charCount(cp);
+                    }
+                    line=part;
+                }
+                result.add(line);
+            }
+            return result;
+        }catch(IOException unsupported){throw new IllegalArgumentException("Text contains a character unsupported by the print proof font",unsupported);}
     }
 
     private void ellipse(PDPageContentStream stream,float x,float y,float w,float h)throws IOException{

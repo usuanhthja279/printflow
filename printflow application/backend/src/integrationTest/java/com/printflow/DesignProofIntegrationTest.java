@@ -126,6 +126,22 @@ class DesignProofIntegrationTest {
   var export=artist.send("POST",path+"/editor-export",json.writeValueAsString(new PrintDesign.ExportRequest(2,0,"Created from private design draft")),true);assertEquals(200,export.statusCode(),export.body());var artifact=(Map<?,?>)data(export).get("artifact");assertEquals("CLEAN",artifact.get("state"));assertEquals("DESIGN",artifact.get("kind"));assertEquals(404,buyer.send("GET",path+"/artifacts/"+artifact.get("id")+"/download",null,false).statusCode());
   var proof=publish(lead,artifact.get("id"),0);assertEquals(1,((Number)proof.get("revision")).intValue());assertEquals(200,buyer.send("GET",path+"/artifacts/"+artifact.get("id")+"/download",null,false).statusCode());String approve=json.writeValueAsString(Map.of("action","APPROVE","note","Reviewed exact editor proof","quoteId",proof.get("quote_id"),"artifactHash",proof.get("sha256"),"reviewed",true,"reviewedPages",List.of(1)));assertEquals(200,buyer.send("POST",path+"/proofs/"+proof.get("id")+"/decision",approve,true).statusCode());assertTrue((Boolean)data(buyer.send("GET",path,null,false)).get("currentProofApproved"));var editedAfterApproval=new PrintDesign.Document(1,"WEDDING_INVITATION",148,210,3,5,List.of(new PrintDesign.Element("changed","TEXT",12,18,60,12,0,"Do not mutate approved proof",18,"#183b43","#183b43",0,null)));assertEquals(409,artist.send("PUT",editor,json.writeValueAsString(new PrintDesign.SaveRequest(1,editedAfterApproval)),true).statusCode());
  }
+    @Test void simultaneousFirstEditorDraftSavesReturnOneSuccessAndOneConflict()throws Exception{
+  UUID lead=lead();acceptQuote(lead);String editor=base(lead)+"/editor-draft";
+  var fontResponse=artist.send("GET","/api/v1/design/editor-font",null,false);assertEquals(200,fontResponse.statusCode());assertTrue(fontResponse.headers().firstValue("Content-Type").orElse("").contains("font/ttf"));
+  var customerDoc=new PrintDesign.Document(1,"WEDDING_INVITATION",148,210,3,5,List.of(new PrintDesign.Element("customer-first","TEXT",10,10,60,12,0,"Customer first draft",14,"#183b43","#183b43",0,null)));
+  var designerDoc=new PrintDesign.Document(1,"WEDDING_INVITATION",148,210,3,5,List.of(new PrintDesign.Element("designer-first","TEXT",10,20,60,12,0,"Designer first draft",14,"#183b43","#183b43",0,null)));
+  var ready=new CountDownLatch(2);var start=new CountDownLatch(1);var pool=Executors.newFixedThreadPool(2);
+  try{
+   var customerSave=pool.submit(()->{ready.countDown();start.await();return buyer.send("PUT",editor,json.writeValueAsString(new PrintDesign.SaveRequest(0,customerDoc)),true);});
+   var designerSave=pool.submit(()->{ready.countDown();start.await();return artist.send("PUT",editor,json.writeValueAsString(new PrintDesign.SaveRequest(0,designerDoc)),true);});
+   assertTrue(ready.await(5,TimeUnit.SECONDS));start.countDown();var a=customerSave.get(30,TimeUnit.SECONDS);var b=designerSave.get(30,TimeUnit.SECONDS);
+   assertEquals(List.of(200,409),java.util.stream.Stream.of(a.statusCode(),b.statusCode()).sorted().toList());
+   var saved=data(artist.send("GET",editor,null,false));assertEquals(1,((Number)saved.get("revision")).intValue());
+   assertEquals(1,jdbc.queryForObject("select count(*) from design_editor_drafts where enquiry_id=?",Integer.class,lead));
+  }finally{pool.shutdownNow();}
+ }
+
     class Client {
         CookieManager cookies=new CookieManager(null,CookiePolicy.ACCEPT_ALL);
         HttpClient client=HttpClient.newBuilder().cookieHandler(cookies).build();
