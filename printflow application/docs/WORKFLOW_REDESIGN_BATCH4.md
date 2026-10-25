@@ -5,7 +5,7 @@
 - Branch: `feature/workflow-redesign-batch4`
 - Base: Batch 3B commit `d8b0421b07d0368367c634169852f34ccd863cba`
 - Native services: PostgreSQL 17 on `5432`, Spring API on `8080`, Next.js UI on `3000`; Docker was not used.
-- This batch reuses the existing finance, invoice, payment gateway, fulfilment, photo scanning and authorization APIs. No database migration or API contract change was introduced.
+- This batch reuses the existing finance, invoice, payment gateway, fulfilment, photo scanning and authorization APIs. No database migration or endpoint was added. The corrective pass below adds documented response fields for payment-profile inclusion and server-validated evidence readiness.
 
 The server remains authoritative for paise totals, payment agreements, receipt verification/correction, invoice immutability, production release, dispatch, delivery confirmation, scanned evidence, issue holds and completion. The UI presents existing projections and retains the current mutation and revision checks.
 
@@ -34,7 +34,7 @@ The screen inventory is updated in [SCREEN_MAP.md](SCREEN_MAP.md). Contract deta
 | Focused Batch 3B collaboration reconnect/revocation | 4 passed across desktop and mobile before the final mobile viewport normalization; final rerun recorded below. |
 | `./backend/gradlew.bat -p backend --no-daemon integrationTest --tests com.printflow.WorkflowMailIntegrationTest` | Passed against native PostgreSQL after explicitly passing the local `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` process variables. This preserves the payment/production/evidence server gates. |
 | `npm.cmd run build` | Passed. Compiled, type checked and generated all Next.js pages. Final rerun recorded below after the final finance label refinement. |
-| Full native browser workflow harness (`operations-flow.spec.ts`) | Not run: `.local/browser-fixtures.json` is absent. The harness stops before sign-in; no owner/customer credentials were generated or read for this test. |
+| Full native browser workflow harness (`operations-flow.spec.ts`) | Attempted in the corrective pass below with the `.env` owner and a temporary UI-created customer. It advanced through proof approval and owner finance/production setup, then stopped at the printer login due to the application's sign-in throttle. |
 | Combined 28-case Playwright invocation | Not a clean result: it stopped on shared synthetic customer-session state in the older cross-spec sequence. Relevant finance/delivery and collaboration specs passed in isolated focused runs. The complete 28-case matrix is not claimed. |
 
 SMTP was disabled for the local app during this pass. No real Razorpay payment, invoice email, webhook delivery, bank receipt, customer mail or courier event was attempted.
@@ -48,7 +48,7 @@ The full evidence manifest, HTML gallery and ZIP are in that directory / adjacen
 ## Limitations and review notes
 
 - The 28 visual scenarios in the Batch 4 brief are not all separately captured. The evidence set focuses on customer finance, the seven-stage work overview, owner dispatch blocking, photo preview and responsive variants. Owner receipt correction, invoice PDF, credit/overpayment, explicit waiver, issue resolution, completed state and API-denial screenshots still need a configured native browser fixture account.
-- The checked-in native operations test could not be exercised because its ignored fixture JSON was missing. This does not affect the successful PostgreSQL-backed integration test or the synthetic Playwright checks, but the complete browser lifecycle remains unverified in this pass.
+- The complete authenticated browser lifecycle remains unverified because the separate printer login hit the configured 15-minute sign-in throttle. PostgreSQL integration coverage and focused synthetic desktop/mobile checks passed for the corrected readiness behavior.
 - No owner readiness projection change was needed: existing queue and selected-job refresh paths already use server projections. No backend gate, invoice contract, ledger schema, WebSocket authorization rule or state transition was weakened.
 
 ## Final verification
@@ -72,3 +72,41 @@ The Batch 3B designer/customer/collaboration suite was run in isolation after no
 `operations-flow.spec.ts` cannot start in this checkout because its ignored `.local/browser-fixtures.json` is absent. No credentials were created/read for it; therefore the real authenticated browser lifecycle and owner finance workspace remain unverified here. PostgreSQL-backed `WorkflowMailIntegrationTest` and synthetic Playwright flows did run. The 32-scenario matrix in the supplied Batch 4 brief was not exhaustively executed; outstanding capture gaps are listed above.
 
 Final build and focused UI outcomes replace the earlier provisional entries above.
+
+## Payment aggregation and dispatch readiness correction (25 October 2026)
+
+Two focused corrections were applied without changing the ledger calculation or dispatch authorization:
+
+- The payments response now includes `testPaymentsIncludedInTotals`, derived from the active Spring profile. The UI uses it with receipt presence to distinguish included TEST payments from historical TEST receipts excluded by production policy. `paidPaise` and all server payment gates are unchanged.
+- The fulfilment response now includes `evidenceReadiness.pickup` and `.delivery`, validated on the server as `SCANNED`, `WAIVED`, `PENDING`, `INVALID` or `NOT_APPLICABLE`. The stepper marks pickup evidence complete only after a valid scan, labels an owner-authorized waiver separately, and marks Dispatch current only when fulfilment is READY and the server reports scan or waiver readiness. Mutation authorization and server validation are unchanged.
+
+### Focused verification
+
+| Check | Result |
+|---|---|
+| `./backend/gradlew.bat -p backend --no-daemon test --tests com.printflow.customer.PaymentsProfileTest` | Passed. DEV includes TEST receipts; `prod` excludes them. |
+| `./backend/gradlew.bat -p backend --no-daemon integrationTest --tests com.printflow.WorkflowMailIntegrationTest.routingProductionQueueAndDeliveryPhotosRespectScopesAndGates` | Passed against native PostgreSQL 17 on port 5432. Verifies pending, scanned and owner-waived readiness, non-owner denial and server dispatch gates. |
+| `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "TEST receipt label|delivery scan evidence|photo waiver" --project=desktop --project=mobile --max-failures=1` | Passed: 6/6. Includes historical TEST receipt excluded/included states, pending-to-scanned dispatch stepper, and an owner-authorized waiver. |
+| `npm.cmd run typecheck` | Passed after the final UI and screenshot-fixture edits. |
+| `npm.cmd run build` | Passed after the application code changes; optimized compilation, TypeScript and static generation completed. |
+| `./backend/gradlew.bat -p backend --no-daemon bootJar` | Passed; rebuilt local API jar used for the authenticated attempt. |
+| `git diff --check` | Passed; only line-ending conversion warnings. |
+
+### Authenticated local journey attempt
+
+The existing `.env` contains the local owner bootstrap credentials, and the owner was MFA-enrolled. The fixture generated a current TOTP privately without changing that account. There are no customer-login credentials in `.env`; the customer was a disposable address under `example.test`, registered and activated through the UI. Synthetic designer, printer and delivery staff were used. SMTP was disabled, so lifecycle messages were checked only in the local outbox.
+
+The authenticated browser journey successfully reached customer activation, quotation acceptance, automatic design assignment, proof feedback and approval, payment agreement, advance receipt, invoice PDF delivery link, production assignment and owner production board. The run stopped at the separate printer login because the application returned its configured `Too many sign-in attempts. Try again in 15 minutes.` response. I did not bypass the sign-in throttle. Therefore printer operations, dispatch and delivery were not completed through the authenticated browser journey in this pass. The database-backed integration test and synthetic desktop/mobile regression tests cover the changed dispatch readiness behavior, but do not replace that incomplete authenticated journey.
+
+### Retained visual evidence
+
+The actual synthetic UI screenshots are in `output/batch4-visual-evidence/`:
+
+- `payment-test-receipt-excluded-desktop.png` and `payment-test-receipt-excluded-mobile.png`
+- `payment-test-receipt-included-desktop.png` and `payment-test-receipt-included-mobile.png`
+- `owner-pickup-scan-passed-desktop.png` and `owner-pickup-scan-passed-mobile.png`
+- `owner-photo-waiver-desktop.png` and `owner-photo-waiver-mobile.png`
+
+I inspected desktop and mobile payment and waiver captures. The payment summary is readable at both sizes; mobile stacks the three totals vertically without horizontal overflow. The delivery stepper clearly distinguishes Complete, Waived, Current and Pending; the mobile cards stack without clipping. These are synthetic Playwright UI fixtures, not photographs or real customer orders.
+
+The rebuilt local web and API processes were started with `./Start-PrintFlow.ps1 -SkipBuild -DisableMail`; PostgreSQL remained on `5432`. External mail remained disabled. The authenticated browser test was limited by the sign-in throttle noted above.

@@ -10,7 +10,7 @@ import { ReadinessChecklist } from './WorkflowUI';
 type Policy = { revision: number; advance_paise: number; credit_due: string | null; reason: string };
 type Receipt = { id: string; receipt_number: number; amount_paise: number; method: string; reference: string; paid_on: string; reversal_reason: string | null };
 type Invoice = { id: string; quote_id: string; invoice_number: number; issued_on: string; total_paise: number };
-type Finance = { quoteId: string; quoteVersion: number; totalPaise: number; paidPaise: number; balancePaise: number; overpaidPaise: number; stage: string; policy: Policy | null; policyCurrent: boolean; owner: boolean; customer: boolean; closed: boolean; released: boolean; receipts: Receipt[]; invoices: Invoice[] };
+type Finance = { quoteId: string; quoteVersion: number; totalPaise: number; paidPaise: number; balancePaise: number; overpaidPaise: number; testPaymentsIncludedInTotals: boolean; stage: string; policy: Policy | null; policyCurrent: boolean; owner: boolean; customer: boolean; closed: boolean; released: boolean; receipts: Receipt[]; invoices: Invoice[] };
 type CheckoutResult = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
 type CheckoutInstance = { open: () => void; on: (event: string, handler: () => void) => void };
 declare global { interface Window { Razorpay?: new (options: Record<string, unknown>) => CheckoutInstance } }
@@ -74,7 +74,8 @@ export default function PaymentsPanel({ leadId, onChanged }: { leadId: string; o
 
   const currentInvoices = useMemo(() => data?.invoices.filter(invoice => invoice.quote_id === data.quoteId) || [], [data]);
   const currentInvoice = currentInvoices[0];
-  const includesTestPayment = !!data?.receipts.some(receipt => receipt.method === 'RAZORPAY_TEST' && !receipt.reversal_reason);
+  const hasTestPayment = !!data?.receipts.some(receipt => receipt.method === 'RAZORPAY_TEST' && !receipt.reversal_reason);
+  const includesTestPayment = hasTestPayment && !!data?.testPaymentsIncludedInTotals;
   const validCredit = !!(data?.policyCurrent && data.policy?.credit_due && data.stage === 'Balance on approved credit');
   const nextAction = !data ? '' : data.overpaidPaise > 0 ? 'The owner needs to reconcile the overpayment.' : !data.policyCurrent ? 'The owner needs to confirm payment terms for this quotation.' : data.policy && data.paidPaise < data.policy.advance_paise ? data.customer ? 'Pay the agreed advance to unlock production review.' : 'Verify the agreed advance before production release.' : !currentInvoice ? data.owner ? 'Issue the commercial invoice for this quotation.' : 'The owner has not issued the current commercial invoice yet.' : data.balancePaise > 0 && !validCredit ? data.customer ? 'Pay the remaining balance before dispatch.' : 'Collect the balance or confirm valid approved credit before dispatch.' : 'Finance checks are satisfied for the current order agreement.';
   const readiness = data ? [
@@ -89,7 +90,7 @@ export default function PaymentsPanel({ leadId, onChanged }: { leadId: string; o
     {data && <>
       <div className="finance-summary" aria-label="Finance summary">
         <article className="finance-total"><span>Agreed order total</span><strong>{money(data.totalPaise)}</strong><small>Accepted quotation v{data.quoteVersion}</small></article>
-        <article><span>{includesTestPayment ? 'Ledger payments · includes TEST' : 'Verified payments'}</span><strong>{money(data.paidPaise)}</strong><small>{includesTestPayment ? 'Includes simulated Razorpay TEST payments; no real money moved.' : 'Only confirmed ledger receipts count'}</small></article>
+        <article><span>{includesTestPayment ? 'Ledger payments · includes TEST' : hasTestPayment ? 'Verified payments · TEST excluded' : 'Verified payments'}</span><strong>{money(data.paidPaise)}</strong><small>{includesTestPayment ? 'Includes simulated Razorpay TEST payments; no real money moved.' : hasTestPayment ? 'Historical TEST receipts are excluded by the active server payment policy.' : 'Only confirmed ledger receipts count'}</small></article>
         <article><span>Balance outstanding</span><strong>{money(data.balancePaise)}</strong><small>{data.overpaidPaise > 0 ? 'Overpayment needs owner review' : validCredit ? 'Covered by approved credit until ' + data.policy?.credit_due : 'Due before dispatch unless valid credit is approved'}</small></article>
       </div>
       <div className="finance-next-action" role="status"><span className="overline">NEXT FINANCE ACTION</span><p>{nextAction}</p></div>
