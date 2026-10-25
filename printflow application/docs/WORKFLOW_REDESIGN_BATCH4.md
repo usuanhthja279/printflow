@@ -1,112 +1,61 @@
 # J.D.Printex Workflow Redesign — Batch 4
 
-## Baseline and scope
+## Scope and branch
 
+- Repository: `usuanhthja279/printflow`
 - Branch: `feature/workflow-redesign-batch4`
-- Base: Batch 3B commit `d8b0421b07d0368367c634169852f34ccd863cba`
-- Native services: PostgreSQL 17 on `5432`, Spring API on `8080`, Next.js UI on `3000`; Docker was not used.
-- This batch reuses the existing finance, invoice, payment gateway, fulfilment, photo scanning and authorization APIs. No database migration or endpoint was added. The corrective pass below adds documented response fields for payment-profile inclusion and server-validated evidence readiness.
+- Latest implementation commit: `8cb22ed62f75c92ea7f639c8590dbfbb7bf4ad6c`
+- No merge, deployment, Batch 5 work or unrelated redesign is included.
+- Local services use PostgreSQL 17 on `5432`, Spring on `8080` and Next.js on `3000`. Docker was not used.
 
-The server remains authoritative for paise totals, payment agreements, receipt verification/correction, invoice immutability, production release, dispatch, delivery confirmation, scanned evidence, issue holds and completion. The UI presents existing projections and retains the current mutation and revision checks.
+## Batch 4 corrections already delivered
 
-## Changes delivered
+The payment ledger calculation and all backend workflow gates remain authoritative and unchanged.
 
-- Finance workspace now groups the current accepted quotation total, ledger payments and remaining balance; shows the quotation-bound payment agreement, current invoice readiness, next finance action, receipts and invoice history. INR display derives from integer paise values. Test receipts are explicitly marked simulated, including in the aggregate payment summary.
-- Razorpay status distinguishes unavailable from TEST configuration and shows webhook configuration without exposing credentials. The existing server-verified checkout remains TEST-only.
-- Owner payment agreement, explicit receipt verification, append-only receipt correction, immutable commercial invoice preview/download and non-GST wording remain intact. Customer view has no owner policy, receipt-verification or correction controls.
-- Fulfilment now displays an ordered seven-step server-state trail, customer-review window and issue hold. Failed state mutations retain the server error while refreshing the authoritative state and preserving the entered note.
-- Delivery photo cards and modal preserve original image proportions. A failed authenticated preview has a retry state; upload timestamps remain labelled as server upload time.
-- WebSocket close code 1008 clears participant and cursor state, marks presence unavailable/revoked and does not retry. Cursor rendering accepts the revision from the typed event envelope as well as the legacy nested location.
-- Focused regressions cover finance visibility and formatting, delivery step ordering, rejected dispatch message retention, separate pickup/delivery blockers, collaboration cursor replay/revocation, exact proof review and mobile overflow.
+- The payments API exposes `testPaymentsIncludedInTotals`, allowing the UI to state whether TEST receipts contribute to the displayed aggregate under the active profile.
+- The fulfilment API exposes server-validated pickup and delivery evidence readiness (`SCANNED`, `WAIVED`, `PENDING`, `INVALID` or `NOT_APPLICABLE`). The UI distinguishes an authorized waiver from a successful scan and only advances Dispatch when the server readiness projection permits it.
+- Existing payment authorization, invoice immutability, proof revision checks, production release, dispatch and delivery validation remain intact.
 
-## APIs and role scope
+## Previously recorded verification
 
-No new endpoint was added. The UI uses the existing `GET /api/v1/design/enquiries/{id}/payments`, `/gateway`, `/fulfilment`, `/fulfilment/photos`, secured invoice document/preview routes and existing staff mutation routes. Owner and customer data scopes remain in the backend. Operator queue omissions are not treated as confirmations. Delivery actions and evidence waivers remain server-authorized.
-
-The screen inventory is updated in [SCREEN_MAP.md](SCREEN_MAP.md). Contract details remain in [API_CONTRACT.md](API_CONTRACT.md) and [PAYMENTS_AND_INVOICES.md](PAYMENTS_AND_INVOICES.md).
-
-## Verification results
-
-| Check | Result |
-|---|---|
-| `npm.cmd run typecheck` | Passed before final finance wording refinement; rerun recorded below after final edits. |
-| Focused Playwright finance/work/delivery scenarios, desktop and mobile | 8 passed. Scenarios: customer work overview, blocked finance, dispatch evidence/error retention, independent pickup/delivery evidence. Synthetic API fixtures; not provider or real-payment verification. |
-| Focused Batch 3B collaboration reconnect/revocation | 4 passed across desktop and mobile before the final mobile viewport normalization; final rerun recorded below. |
-| `./backend/gradlew.bat -p backend --no-daemon integrationTest --tests com.printflow.WorkflowMailIntegrationTest` | Passed against native PostgreSQL after explicitly passing the local `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` process variables. This preserves the payment/production/evidence server gates. |
-| `npm.cmd run build` | Passed. Compiled, type checked and generated all Next.js pages. Final rerun recorded below after the final finance label refinement. |
-| Full native browser workflow harness (`operations-flow.spec.ts`) | Attempted in the corrective pass below with the `.env` owner and a temporary UI-created customer. It advanced through proof approval and owner finance/production setup, then stopped at the printer login due to the application's sign-in throttle. |
-| Combined 28-case Playwright invocation | Not a clean result: it stopped on shared synthetic customer-session state in the older cross-spec sequence. Relevant finance/delivery and collaboration specs passed in isolated focused runs. The complete 28-case matrix is not claimed. |
-
-SMTP was disabled for the local app during this pass. No real Razorpay payment, invoice email, webhook delivery, bank receipt, customer mail or courier event was attempted.
-
-## Visual evidence
-
-Actual Playwright browser screenshots are retained in `output/batch4-visual-evidence/`. Desktop screenshots are 1440×900 and mobile screenshots are 390×844. All are synthetic UI/API fixture states; no real customer records, secrets or payment details are included. The mobile and desktop files were inspected for cropping, overflow, text hierarchy and accessible action placement. The clean-photo preview displays its full aspect ratio. The tested dispatch failure remains visible beside the preserved note.
-
-The full evidence manifest, HTML gallery and ZIP are in that directory / adjacent output package. Screenshot state/significance is described in its README.
-
-## Limitations and review notes
-
-- The 28 visual scenarios in the Batch 4 brief are not all separately captured. The evidence set focuses on customer finance, the seven-stage work overview, owner dispatch blocking, photo preview and responsive variants. Owner receipt correction, invoice PDF, credit/overpayment, explicit waiver, issue resolution, completed state and API-denial screenshots still need a configured native browser fixture account.
-- The complete authenticated browser lifecycle remains unverified because the separate printer login hit the configured 15-minute sign-in throttle. PostgreSQL integration coverage and focused synthetic desktop/mobile checks passed for the corrected readiness behavior.
-- No owner readiness projection change was needed: existing queue and selected-job refresh paths already use server projections. No backend gate, invoice contract, ledger schema, WebSocket authorization rule or state transition was weakened.
-
-## Final verification
-
-Append exact final command results here after the final post-edit reruns. Do not treat this branch as deployed; no merge or deployment is part of Batch 4.
-## Final verification (25 October 2026)
+These are results recorded during the earlier Batch 4 correction pass. They are retained as historical evidence and were not all reproduced in the acceptance attempt below.
 
 - `npm.cmd run typecheck` — passed.
-- `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "project next action|failed scan and unpaid finance|delivery scan evidence precedes confirmation|missing pickup and delivery photos" --project=desktop --project=mobile --max-failures=1` — passed twice after the final UI edits, 8 cases each run. Final run captures retained directly in the evidence gallery at 1440×900 and 390×844.
-- `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "failed scan and unpaid finance" --project=desktop --project=mobile --max-failures=1` — 2 passed after the final finance TEST-status wording change.
-- `npm.cmd run test:e2e -- e2e/batch3-designer-workspace.spec.ts --grep "designer dashboard and scoped project workspace|customer proof review|collaboration replays|revoked collaboration" --project=desktop --project=mobile --max-failures=1` — 8 passed, including 1008 revocation cleanup, cursor replay, multiple revisions, exact approval and mobile proof review.
-- `./scripts/Use-PrintFlowTools.ps1; ./scripts/Initialize-LocalDatabase.ps1; $env:DB_URL='jdbc:postgresql://127.0.0.1:5432/'+$env:POSTGRES_DB; $env:DB_USERNAME=$env:POSTGRES_USER; $env:DB_PASSWORD=$env:POSTGRES_PASSWORD; ./backend/gradlew.bat -p backend --no-daemon integrationTest --tests com.printflow.WorkflowMailIntegrationTest` — BUILD SUCCESSFUL against native PostgreSQL 5432.
-- `npm.cmd run build` — passed after final changes: optimized compilation, TypeScript and static page generation completed.
-- Local app restored with `./Start-PrintFlow.ps1 -SkipBuild -DisableMail`; health check: API `UP`, UI `200`, PostgreSQL `5432` listening.
-- `git diff --check` — passed (line-ending conversion warnings only; no whitespace errors).
+- Focused synthetic finance, work, delivery, waiver and collaboration Playwright runs — previously recorded as passing in isolated runs. The scenarios use synthetic API fixtures; they do not establish a complete authenticated backend journey.
+- `PaymentsProfileTest` and `WorkflowMailIntegrationTest.routingProductionQueueAndDeliveryPhotosRespectScopesAndGates` — previously recorded as passing against local PostgreSQL.
+- `npm.cmd run build` — previously recorded as passing after the correction.
+- Corresponding synthetic desktop/mobile screenshots and visual notes are retained in [`output/batch4-visual-evidence/README.md`](../output/batch4-visual-evidence/README.md). They are not real authenticated customer/order evidence.
 
-The final workflow screenshot run required one approved retry after Edge failed to launch under the default execution sandbox; the retry passed all 8 cases. Visual inspection found both Pickup evidence and Dispatch marked current while the pickup scan was pending. The stepper was corrected so only Pickup evidence is current until it passes; the final production build and focused stepper regression then passed (2/2 desktop/mobile). Final captures were inspected directly: customer finance remains legible, the seven-step production drawer is ordered and scrollable, the preview shows the whole synthetic image, and mobile finance/work screens show no horizontal body overflow. The rejected dispatch message remains visible with its customer note. `output/batch4-visual-evidence/README.md` records the screenshot set and inspection notes.
+## Final authenticated acceptance attempt — 25 October 2026
 
-The Batch 3B designer/customer/collaboration suite was run in isolation after normalizing the synthetic proof fixture. The combined 28-case cross-spec command is not claimed as passed: an older shared customer-session fixture interaction stopped that combined invocation. The relevant focused scenarios passed in isolated spec runs.
+**Status: INCOMPLETE; not ready for controlled merge review.** The required authenticated printer-to-delivery journey and live-backend acceptance checks did not complete.
 
-`operations-flow.spec.ts` cannot start in this checkout because its ignored `.local/browser-fixtures.json` is absent. No credentials were created/read for it; therefore the real authenticated browser lifecycle and owner finance workspace remain unverified here. PostgreSQL-backed `WorkflowMailIntegrationTest` and synthetic Playwright flows did run. The 32-scenario matrix in the supplied Batch 4 brief was not exhaustively executed; outstanding capture gaps are listed above.
+The earlier real-browser attempt reached customer activation, quotation acceptance, design assignment, proof feedback and approval, payment agreement, a verified advance, invoice issuance and owner production preparation. It stopped at printer login with the configured 15-minute sign-in throttle. This pass made no additional sign-in attempts, did not reset or weaken the throttle, and did not restart Spring to get around it.
 
-Final build and focused UI outcomes replace the earlier provisional entries above.
+A local synthetic checkpoint file exists at `.local/workflow-ui-evidence.json`, but the ignored `.local/browser-fixtures.json` required by `frontend/e2e/operations-flow.spec.ts` is absent. The stored checkpoint was not validated against PostgreSQL during this pass, so it must not be treated as a verified resumable order. The existing browser test also does not yet resume from that checkpoint; it starts its journey from intake when enabled. No new order or credentials were created in this pass.
 
-## Payment aggregation and dispatch readiness correction (25 October 2026)
+### Current verification results
 
-Two focused corrections were applied without changing the ledger calculation or dispatch authorization:
+| Check | Command or observation | Result |
+|---|---|---|
+| Security/profile/PDF unit tests | `./backend/gradlew.bat -p backend --no-daemon test --tests com.printflow.identity.LoginThrottleTest --tests com.printflow.customer.PaymentsProfileTest --tests com.printflow.customer.InvoicePdfTest` | **Passed** (`BUILD SUCCESSFUL`). The throttle regression tests ran; no login throttles were changed. |
+| Frontend typecheck | `npm.cmd run typecheck` | **Passed.** |
+| Next.js production build | `npm.cmd run build` | **Failed** before compilation: Windows returned `EBUSY` while Next attempted to remove `.next/standalone`, which is in use by the running UI process. No Next.js build output or running app process was forcibly removed. |
+| Focused synthetic Playwright check | `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "failed scan and unpaid finance" --project=desktop --max-failures=1` | Initial Edge launch failed on temporary-profile permissions. The one approved retry launched Edge, but the page remained at “Opening your project…” and the expected next-action region never appeared. **Failed at the first next-action assertion.** |
+| PostgreSQL integration checks | `integrationTest` for `WorkflowMailIntegrationTest.routingProductionQueueAndDeliveryPhotosRespectScopesAndGates`, `WorkflowMailIntegrationTest.confirmedProductionDeliveryIssueAndCompletionQueueOneNotificationPerEvent`, `StaffWorkflowIntegrationTest.disabledAccountsAndLogoutInvalidateSessions`, `StaffWorkflowIntegrationTest.repeatedLoginAttemptsAreRateLimited`, and `StaffScopeIntegrationTest.*` | **Failed at Spring context initialization** because Flyway could not connect to PostgreSQL (`ConnectException: connection refused`). These tests did not execute their assertions. |
+| Local health | Read-only `GET http://127.0.0.1:3000/` and `GET http://127.0.0.1:8080/actuator/health` | UI returned **200**. API health timed out after 4 seconds. |
+| Real authenticated multi-role flow | `frontend/e2e/operations-flow.spec.ts` | **Not run**: its ignored browser-fixture file is absent, and the earlier printer login was throttled. No role login was attempted in this pass. |
+| Authenticated screenshots | Owner, printer, delivery staff and customer at desktop/mobile sizes | **Not captured in this pass.** Existing retained screenshots are synthetic fixture views only. |
 
-- The payments response now includes `testPaymentsIncludedInTotals`, derived from the active Spring profile. The UI uses it with receipt presence to distinguish included TEST payments from historical TEST receipts excluded by production policy. `paidPaise` and all server payment gates are unchanged.
-- The fulfilment response now includes `evidenceReadiness.pickup` and `.delivery`, validated on the server as `SCANNED`, `WAIVED`, `PENDING`, `INVALID` or `NOT_APPLICABLE`. The stepper marks pickup evidence complete only after a valid scan, labels an owner-authorized waiver separately, and marks Dispatch current only when fulfilment is READY and the server reports scan or waiver readiness. Mutation authorization and server validation are unchanged.
+The local PostgreSQL startup script reported readiness after automatic recovery of the existing data directory. The startup log recorded shutdown and recovery after the stale PID marker was cleared; subsequent integration tests still could not connect. Database-backed checkpoint validation, issue-open/completion-hold tests and PostgreSQL persistence acceptance therefore remain unverified. SMTP was kept disabled; no real payment, email, webhook or external delivery was performed.
 
-### Focused verification
+## Remaining acceptance work
 
-| Check | Result |
-|---|---|
-| `./backend/gradlew.bat -p backend --no-daemon test --tests com.printflow.customer.PaymentsProfileTest` | Passed. DEV includes TEST receipts; `prod` excludes them. |
-| `./backend/gradlew.bat -p backend --no-daemon integrationTest --tests com.printflow.WorkflowMailIntegrationTest.routingProductionQueueAndDeliveryPhotosRespectScopesAndGates` | Passed against native PostgreSQL 17 on port 5432. Verifies pending, scanned and owner-waived readiness, non-owner denial and server dispatch gates. |
-| `npm.cmd run test:e2e -- e2e/workflow-redesign.spec.ts --grep "TEST receipt label|delivery scan evidence|photo waiver" --project=desktop --project=mobile --max-failures=1` | Passed: 6/6. Includes historical TEST receipt excluded/included states, pending-to-scanned dispatch stepper, and an owner-authorized waiver. |
-| `npm.cmd run typecheck` | Passed after the final UI and screenshot-fixture edits. |
-| `npm.cmd run build` | Passed after the application code changes; optimized compilation, TypeScript and static generation completed. |
-| `./backend/gradlew.bat -p backend --no-daemon bootJar` | Passed; rebuilt local API jar used for the authenticated attempt. |
-| `git diff --check` | Passed; only line-ending conversion warnings. |
+1. Restore stable PostgreSQL connectivity on `5432` and confirm the existing checkpoint against persisted order, quotation, proof, payment, invoice and production state without modifying it.
+2. Add checkpoint-aware resume behavior to `operations-flow.spec.ts`; do not create duplicate intake, quotation or artwork when a valid checkpoint exists.
+3. After the existing throttle has expired naturally and normal credentials/fixtures are available, continue with the assigned printer and delivery roles. Reuse authenticated browser contexts within the run and stop immediately if the throttle is still active.
+4. Complete the production stages, invalid-evidence rejection, scanned pickup evidence, dispatch, transit, delivery evidence, customer gallery and review-window checks. Run the negative authorization and stale-revision scenarios using existing integration coverage.
+5. Capture and inspect real authenticated desktop and mobile screenshots for owner, printer, delivery staff and customer. Keep them separate from synthetic screenshots and temporary Playwright output.
+6. Rerun focused Playwright checks, the Next.js production build and the relevant Gradle/PostgreSQL integration tests. Update this report with actual outcomes before requesting merge review.
 
-### Authenticated local journey attempt
-
-The existing `.env` contains the local owner bootstrap credentials, and the owner was MFA-enrolled. The fixture generated a current TOTP privately without changing that account. There are no customer-login credentials in `.env`; the customer was a disposable address under `example.test`, registered and activated through the UI. Synthetic designer, printer and delivery staff were used. SMTP was disabled, so lifecycle messages were checked only in the local outbox.
-
-The authenticated browser journey successfully reached customer activation, quotation acceptance, automatic design assignment, proof feedback and approval, payment agreement, advance receipt, invoice PDF delivery link, production assignment and owner production board. The run stopped at the separate printer login because the application returned its configured `Too many sign-in attempts. Try again in 15 minutes.` response. I did not bypass the sign-in throttle. Therefore printer operations, dispatch and delivery were not completed through the authenticated browser journey in this pass. The database-backed integration test and synthetic desktop/mobile regression tests cover the changed dispatch readiness behavior, but do not replace that incomplete authenticated journey.
-
-### Retained visual evidence
-
-The actual synthetic UI screenshots are in `output/batch4-visual-evidence/`:
-
-- `payment-test-receipt-excluded-desktop.png` and `payment-test-receipt-excluded-mobile.png`
-- `payment-test-receipt-included-desktop.png` and `payment-test-receipt-included-mobile.png`
-- `owner-pickup-scan-passed-desktop.png` and `owner-pickup-scan-passed-mobile.png`
-- `owner-photo-waiver-desktop.png` and `owner-photo-waiver-mobile.png`
-
-I inspected desktop and mobile payment and waiver captures. The payment summary is readable at both sizes; mobile stacks the three totals vertically without horizontal overflow. The delivery stepper clearly distinguishes Complete, Waived, Current and Pending; the mobile cards stack without clipping. These are synthetic Playwright UI fixtures, not photographs or real customer orders.
-
-The rebuilt local web and API processes were started with `./Start-PrintFlow.ps1 -SkipBuild -DisableMail`; PostgreSQL remained on `5432`. External mail remained disabled. The authenticated browser test was limited by the sign-in throttle noted above.
+No code defect or security bypass was introduced during this acceptance attempt. The branch remains unmerged and undeployed.
