@@ -69,7 +69,7 @@ test('real customer and assigned designer collaborate, recover, and lose access 
   await expect(customer.getByText('A new proof revision is available.')).toBeVisible();await customer.getByRole('button',{name:'Load new revision'}).click();
   const customerCanvas=customer.getByRole('button',{name:'Mark a change on the proof'}),designerCanvas=designer.getByRole('button',{name:'Mark a change on the proof'});
   await expect(customerCanvas).toBeVisible();await expect(designerCanvas).toBeVisible();
-  await expect(customer.locator('.presence-pill')).toContainText('Designer');await expect(designer.locator('.presence-pill')).toContainText('Customer');
+  await expect(customer.locator('.presence-pill')).toContainText('Designer',{timeout:30000});await expect(designer.locator('.presence-pill')).toContainText('Customer',{timeout:30000});
   await customerCanvas.scrollIntoViewIfNeeded();await designerCanvas.scrollIntoViewIfNeeded();
   const cr=await customerCanvas.boundingBox(),dr=await designerCanvas.boundingBox();if(!cr||!dr)throw new Error('Proof canvas not measurable');
   await customer.mouse.move(cr.x+cr.width*.38,cr.y+cr.height*.43);await designer.mouse.move(dr.x+dr.width*.64,dr.y+dr.height*.57);

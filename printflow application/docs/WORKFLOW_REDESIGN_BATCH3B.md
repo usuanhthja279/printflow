@@ -4,6 +4,12 @@
 
 This pass fixes inbound STOMP `SEND` handling, restores the currently viewed proof/page after every successful collaboration subscription, and validates the work against the running native PostgreSQL/Spring/UI stack. It does not change proof approval, rejection, or production release authority: those remain REST/database workflows. No database migration, Docker, merge, or deployment was used.
 
+### Multi-staff presence polish
+
+Each collaboration connection now receives a random pseudonymous participant ID scoped to that socket session. The ID is included in presence and cursor events and is used for UI list keys and cursor replacement, so multiple staff members with the shared “J.D.Printex team” label remain independently visible. It reveals neither the account name nor the HTTP session ID.
+
+When the socket closes or presence is otherwise unavailable, the UI immediately clears displayed participants and cursors. After reconnecting, it shows “Presence updating…” until a fresh server presence snapshot arrives, then restores the current participants. A focused Playwright regression checks both sides of that transition.
+
 ## Corrections
 
 - `CollaborationChannelInterceptor` handles client application `SEND` frames while retaining authenticated sessions, CSRF, allowed destinations, exact per-project authorization, subscription checks, and cross-project isolation.
@@ -43,12 +49,12 @@ The test fixture was cleaned; its local credentials file is absent after the run
 
 | Check | Command | Result |
 |---|---|---|
-| STOMP interceptor and broker regressions | `gradlew.bat test --tests com.printflow.collaboration.CollaborationChannelInterceptorTest --tests com.printflow.collaboration.CollaborationBrokerTest --rerun-tasks` | Passed: 10 tests (6 interceptor, 4 broker), 0 failures. |
+| STOMP interceptor and broker regressions | `gradlew.bat test --tests com.printflow.collaboration.CollaborationChannelInterceptorTest --tests com.printflow.collaboration.CollaborationBrokerTest --rerun-tasks` | Passed: 11 tests (6 interceptor, 5 broker), 0 failures. Includes same-label staff participants retaining separate cursor IDs. |
 | Existing proof/workflow integration | `gradlew.bat integrationTest --tests com.printflow.DesignProofIntegrationTest --tests com.printflow.LiveWorkIntegrationTest --tests com.printflow.ProductionBoundaryIntegrationTest --no-daemon` with local DB and secure cookie settings | Passed: 19 tests (12 proof, 5 live-work, 2 production-boundary), 0 failures. |
 | Proof/mail/payment/production lifecycle regression | `gradlew.bat integrationTest --tests com.printflow.WorkflowMailIntegrationTest --no-daemon` | Passed: 9 tests, including payment and production/delivery gates, 0 failures. |
-| Designer/customer proof UI | `npm.cmd run test:e2e -- e2e/batch3-designer-workspace.spec.ts --project=desktop --project=mobile --max-failures=1` | Passed: 6 tests, 0 failures. Includes subscription context replay, stale proof approval, and desktop/mobile proof workspace. |
-| Real authenticated collaboration | `npm.cmd run test:e2e -- e2e/batch3b-real-collaboration.spec.ts --project=desktop --max-failures=1` | Passed: 1 real-backend test, 0 failures. |
-| Next.js production build | `npm.cmd run build` via checked-in Windows startup script | Passed; compiled, type checks and static generation completed. |
+| Designer/customer proof UI | `npm.cmd run test:e2e -- e2e/batch3-designer-workspace.spec.ts --project=desktop --project=mobile --max-failures=1` | Passed: 6 tests, 0 failures. Includes subscription context replay, stale proof approval, immediate presence clearing during reconnect, and desktop/mobile proof workspace. |
+| Real authenticated collaboration | `npm.cmd run test:e2e -- e2e/batch3b-real-collaboration.spec.ts --project=desktop --max-failures=1` | Passed: 1 real-backend test, 0 failures after waiting for fresh presence snapshots; connected desktop/mobile screenshots refreshed. |
+| Next.js production build | `npm.cmd run build` | Passed; compiled, type checks and static generation completed. Spring/UI restarted with rebuilt artifacts; PostgreSQL remained running. |
 | Service readiness | `pg_ctl status`; `GET /actuator/health`; `GET /` | PostgreSQL running; Spring `UP`; UI HTTP 200. |
 
 An earlier aggregate production-boundary attempt inherited insecure cookie settings from the local development environment and failed its Secure-cookie assertion. The focused integration classes were rerun with secure cookies and strict SameSite explicitly enabled; all 19 passed. No workflow security check was disabled to make tests pass.

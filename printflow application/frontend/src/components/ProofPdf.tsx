@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PDFDocumentProxy,PDFDocumentLoadingTask,PDFWorker,RenderTask} from 'pdfjs-dist';
 export type PdfPoint={x:number;y:number;page:number};
-type Pin={id?:string;x:number;y:number;page:number;body:string};type RemoteCursor={label:string;proofRevisionId:string;page:number;x:number;y:number};
+type Pin={id?:string;x:number;y:number;page:number;body:string};type RemoteCursor={participantId:string;label:string;proofRevisionId:string;page:number;x:number;y:number};
 export default function ProofPdf({src,pins=[],onPin,onPinSelect,focusPage,focusSequence,point,onReviewed,onView,onCursor,onCursorLeave,remoteCursors=[]}:{src:string;pins?:Pin[];onPin?:(p:PdfPoint)=>void;onPinSelect?:(commentId?:string)=>void;focusPage?:number;focusSequence?:number;point?:PdfPoint|null;onReviewed?:(pages:number[],count:number)=>void;onView?:(page:number)=>void;onCursor?:(point:PdfPoint)=>void;onCursorLeave?:()=>void;remoteCursors?:RemoteCursor[]}){
  const cancel=useRef<()=>void>(()=>{});
  const onViewRef=useRef(onView);onViewRef.current=onView;
@@ -36,7 +36,7 @@ export default function ProofPdf({src,pins=[],onPin,onPinSelect,focusPage,focusS
       <button type="button" className="pdf-page-canvas" style={{width:pageSize.width||undefined,height:pageSize.height||undefined,minHeight:0}} aria-label={'PDF page '+page+(onPin?' — mark a change':' preview')} disabled={!ready} onPointerMove={e=>{if(!ready||!onCursor)return;const r=e.currentTarget.getBoundingClientRect();onCursor({page,x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))});}} onPointerLeave={onCursorLeave} onClick={e=>{if(!onPin||!ready)return;const rect=e.currentTarget.getBoundingClientRect();onPin({page,x:e.detail===0?0.5:Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width)),y:e.detail===0?0.5:Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height))});}}><canvas ref={canvas} aria-label={'Artwork page '+page}/></button>
       <div className="pdf-page-annotation-layer" aria-label={'Annotations on page '+page} style={{width:pageSize.width||undefined,height:pageSize.height||undefined}}>
        {pins.map((pin,index)=>pin.page===page&&<button type="button" key={pin.id||index} className="proof-pin proof-pin-select" title={pin.body} aria-label={'Go to comment: page '+page+' review pin '+(index+1)+': '+pin.body} style={{left:pin.x*100+'%',top:pin.y*100+'%'}} onClick={event=>{event.stopPropagation();onPinSelect?.(pin.id);}}>{index+1}</button>)}
-       {remoteCursors.filter(cursor=>cursor.page===page).map((cursor,index)=><span aria-hidden="true" className="proof-remote-cursor" key={cursor.label+'-'+index} style={{left:cursor.x*100+'%',top:cursor.y*100+'%'}}><span>{cursor.label}</span></span>)}
+       {remoteCursors.filter(cursor=>cursor.page===page).map(cursor=><span aria-hidden="true" className="proof-remote-cursor" key={cursor.participantId+'-'+cursor.proofRevisionId+'-'+cursor.page} style={{left:cursor.x*100+'%',top:cursor.y*100+'%'}}><span>{cursor.label}</span></span>)}
        {point?.page===page&&<span aria-hidden="true" className="proof-pin pending" style={{left:point.x*100+'%',top:point.y*100+'%'}}>+</span>}
       </div>
      </div>

@@ -10,6 +10,8 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import org.mockito.ArgumentCaptor;
 
 import com.printflow.files.DesignProofs;
 import com.printflow.identity.StaffDirectory;
@@ -75,7 +77,24 @@ class CollaborationBrokerTest {
         // A customer's reconnect/page replay carries proof and page, without pointer coordinates.
         broker.cursor("socket-1",customer,project,new CollaborationBroker.CursorPacket(proof,2,null,null,false));
 
-        verify(messaging).convertAndSendToUser(eq(customer.getUsername()),eq("/queue/collaboration/"+project),argThat(event->event instanceof CollaborationBroker.Event e&&e.type().equals("cursor.moved")&&"Designer".equals(e.data().get("participant"))&&Boolean.TRUE.equals(e.data().get("samePage"))&&Double.valueOf(0.2).equals(e.data().get("x"))&&Double.valueOf(0.8).equals(e.data().get("y"))),anyMap());
+        verify(messaging).convertAndSendToUser(eq(customer.getUsername()),eq("/queue/collaboration/"+project),argThat(event->event instanceof CollaborationBroker.Event e&&e.type().equals("cursor.moved")&&e.data().get("participantId") instanceof String&&"Designer".equals(e.data().get("participant"))&&Boolean.TRUE.equals(e.data().get("samePage"))&&Double.valueOf(0.2).equals(e.data().get("x"))&&Double.valueOf(0.8).equals(e.data().get("y"))),anyMap());
         assertTrue(broker.subscribed("socket-2",project));
+    }
+
+    @Test void sameRoleParticipantsKeepDistinctSessionScopedCursorIdentities(){
+        StaffPrincipal salesOne=new StaffPrincipal(UUID.randomUUID(),"sales-one@example.test","hash","SALES",true,false,1);
+        StaffPrincipal salesTwo=new StaffPrincipal(UUID.randomUUID(),"sales-two@example.test","hash","SALES",true,false,1);
+        HttpSession firstSession=mock(HttpSession.class),secondSession=mock(HttpSession.class);
+        when(firstSession.getAttribute("SPRING_SECURITY_CONTEXT")).thenReturn(new SecurityContextImpl(new UsernamePasswordAuthenticationToken(salesOne,"n/a")));
+        when(secondSession.getAttribute("SPRING_SECURITY_CONTEXT")).thenReturn(new SecurityContextImpl(new UsernamePasswordAuthenticationToken(salesTwo,"n/a")));
+        when(directory.current(salesOne)).thenReturn(true);when(directory.current(salesTwo)).thenReturn(true);
+        broker.join("sales-socket-1",salesOne,firstSession,project);broker.join("sales-socket-2",salesTwo,secondSession,project);
+        broker.cursor("socket-1",customer,project,new CollaborationBroker.CursorPacket(proof,1,0.5,0.5,false));clearInvocations(messaging);
+        broker.cursor("sales-socket-1",salesOne,project,new CollaborationBroker.CursorPacket(proof,1,0.2,0.3,false));
+        broker.cursor("sales-socket-2",salesTwo,project,new CollaborationBroker.CursorPacket(proof,1,0.7,0.8,false));
+        @SuppressWarnings("unchecked") ArgumentCaptor<Object> sent=ArgumentCaptor.forClass(Object.class);
+        verify(messaging,atLeastOnce()).convertAndSendToUser(eq(customer.getUsername()),eq("/queue/collaboration/"+project),sent.capture(),anyMap());
+        var teamCursors=sent.getAllValues().stream().filter(value->value instanceof CollaborationBroker.Event e&&e.type().equals("cursor.moved")&&"J.D.Printex team".equals(e.data().get("participant"))&&Boolean.TRUE.equals(e.data().get("samePage"))).map(value->((CollaborationBroker.Event)value).data().get("participantId")).distinct().toList();
+        assertTrue(teamCursors.size()>=2,"same-label staff cursors must have separate participant IDs");
     }
 }

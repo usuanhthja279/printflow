@@ -66,7 +66,7 @@ public class CollaborationBroker {
         for(Connection target:projectConnections(project)){
             if(target.user.id().equals(user.id()))continue;
             Cursor current=sender.cursor;boolean same=current!=null&&current.x!=null&&current.y!=null&&target.cursor!=null&&target.cursor.proof.equals(current.proof)&&target.cursor.page==current.page;
-            Map<String,Object> data=new HashMap<>();data.put("participant",label(user.role()));data.put("samePage",same);data.put("page",current==null?null:current.page);data.put("proofRevisionId",current==null?null:current.proof);
+            Map<String,Object> data=new HashMap<>();data.put("participantId",sender.participantId.toString());data.put("participant",label(user.role()));data.put("samePage",same);data.put("page",current==null?null:current.page);data.put("proofRevisionId",current==null?null:current.proof);
             if(same){data.put("x",current.x);data.put("y",current.y);}
             send(target,new Event(1,UUID.randomUUID(),"cursor.moved",project,current==null?null:current.proof,Instant.now(),data));
 
@@ -74,7 +74,7 @@ public class CollaborationBroker {
             // returns the other user's visible pointer when both are viewing
             // the same proof/page; this avoids waiting for another mouse move.
             Cursor remote=target.cursor;boolean remoteSame=remote!=null&&remote.x!=null&&remote.y!=null&&current!=null&&remote.proof.equals(current.proof)&&remote.page==current.page;
-            Map<String,Object> remoteData=new HashMap<>();remoteData.put("participant",label(target.user.role()));remoteData.put("samePage",remoteSame);remoteData.put("page",remote==null?null:remote.page);remoteData.put("proofRevisionId",remote==null?null:remote.proof);
+            Map<String,Object> remoteData=new HashMap<>();remoteData.put("participantId",target.participantId.toString());remoteData.put("participant",label(target.user.role()));remoteData.put("samePage",remoteSame);remoteData.put("page",remote==null?null:remote.page);remoteData.put("proofRevisionId",remote==null?null:remote.proof);
             if(remoteSame){remoteData.put("x",remote.x);remoteData.put("y",remote.y);}
             send(sender,new Event(1,UUID.randomUUID(),"cursor.moved",project,remote==null?null:remote.proof,Instant.now(),remoteData));
         }
@@ -107,7 +107,7 @@ public class CollaborationBroker {
         catch(IllegalStateException expired){throw new SecurityException("Session expired",expired);}
     }
     private void broadcastPresence(UUID project){List<Connection> room=projectConnections(project);var participants=room.stream().collect(java.util.stream.Collectors.toMap(c->c.user.id(),c->c,(a,b)->a));
-        for(Connection recipient:room){List<Map<String,Object>> visible=new ArrayList<>();participants.values().stream().sorted(Comparator.comparing(c->label(c.user.role()))).forEach(person->{Map<String,Object> row=new HashMap<>();row.put("label",person.user.id().equals(recipient.user.id())?"You":label(person.user.role()));row.put("role",person.user.role());row.put("self",person.user.id().equals(recipient.user.id()));Cursor cursor=person.cursor;row.put("viewingPage",cursor==null?null:cursor.page);row.put("proofRevisionId",cursor==null?null:cursor.proof);visible.add(row);});send(recipient,new Event(1,UUID.randomUUID(),"presence.snapshot",project,null,Instant.now(),Map.of("participants",visible)));}
+        for(Connection recipient:room){List<Map<String,Object>> visible=new ArrayList<>();participants.values().stream().sorted(Comparator.comparing(c->label(c.user.role()))).forEach(person->{Map<String,Object> row=new HashMap<>();row.put("participantId",person.participantId.toString());row.put("label",person.user.id().equals(recipient.user.id())?"You":label(person.user.role()));row.put("role",person.user.role());row.put("self",person.user.id().equals(recipient.user.id()));Cursor cursor=person.cursor;row.put("viewingPage",cursor==null?null:cursor.page);row.put("proofRevisionId",cursor==null?null:cursor.proof);visible.add(row);});send(recipient,new Event(1,UUID.randomUUID(),"presence.snapshot",project,null,Instant.now(),Map.of("participants",visible)));}
     }
     private List<Connection> projectConnections(UUID project){var room=new ArrayList<Connection>();sessions.values().forEach(c->{if(c.project.equals(project))room.add(c);});return room;}
     private void send(Connection target,Object event){
@@ -116,6 +116,6 @@ public class CollaborationBroker {
     }
     private static String label(String role){return role.equals("DESIGNER")?"Designer":role.equals("CUSTOMER")?"Customer":"J.D.Printex team";}
     private static boolean unit(Double v){return v!=null&&Double.isFinite(v)&&v>=0&&v<=1;}
-    private static final class Connection{final String sessionId;final StaffPrincipal user;final HttpSession httpSession;final UUID project;volatile long lastSeen=System.currentTimeMillis(),lastHeartbeat=0,cursorWindowStarted=0;volatile int cursorPackets=0;volatile Cursor cursor;Connection(String s,StaffPrincipal u,HttpSession h,UUID p){sessionId=s;user=u;httpSession=h;project=p;}}
+    private static final class Connection{final String sessionId;final UUID participantId=UUID.randomUUID();final StaffPrincipal user;final HttpSession httpSession;final UUID project;volatile long lastSeen=System.currentTimeMillis(),lastHeartbeat=0,cursorWindowStarted=0;volatile int cursorPackets=0;volatile Cursor cursor;Connection(String s,StaffPrincipal u,HttpSession h,UUID p){sessionId=s;user=u;httpSession=h;project=p;}}
     private record Cursor(UUID proof,int page,Double x,Double y,long updated){}
 }

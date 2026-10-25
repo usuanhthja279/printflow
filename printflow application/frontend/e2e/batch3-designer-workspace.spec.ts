@@ -99,13 +99,15 @@ test('collaboration replays the selected proof page after reconnect and subscrip
  const framesByConnection:string[][]=[],sockets:import('@playwright/test').WebSocketRoute[]=[];
  await page.routeWebSocket(/\/collaboration\/ws(?:\?.*)?$/,socket=>{
   sockets.push(socket);const frames:string[]=[];framesByConnection.push(frames);
-  socket.onMessage(message=>{const wire=String(message);frames.push(wire);if(wire.startsWith('CONNECT\n'))socket.send('CONNECTED\nversion:1.2\nheart-beat:0,0\n\n\u0000');});
+  socket.onMessage(message=>{const wire=String(message);frames.push(wire);if(wire.startsWith('CONNECT\n'))socket.send('CONNECTED\nversion:1.2\nheart-beat:0,0\n\n\u0000');else if(wire.startsWith('SUBSCRIBE\n'))socket.send('MESSAGE\nmessage-id:presence-1\nsubscription:project-'+customerId+'\ncontent-type:application/json\n\n'+JSON.stringify({version:1,eventId:'presence-1',type:'presence.snapshot',projectId:customerId,proofRevisionId:null,at:now,data:{participants:[{participantId:'staff-session-test',label:'J.D.Printex team',role:'SALES',self:false,viewingPage:1,proofRevisionId:currentProof}]}})+'\u0000');});
  });
  await page.goto('/customer',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'View enquiry',exact:true}).click();
  await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
+ await expect(page.locator('.presence-pill')).toContainText('J.D.Printex team');
  const hasCursorSend=(frames:string[])=>frames.some(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
  await expect.poll(()=>hasCursorSend(framesByConnection[0]||[])).toBe(true);
  await sockets[0].close({code:1001,reason:'synthetic reconnect test'});
+ await expect(page.locator('.collaboration-status')).toContainText('Reconnecting.');await expect(page.locator('.presence-pill')).toHaveCount(0);
  await expect.poll(()=>framesByConnection.length).toBeGreaterThan(1);
  await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
  await expect.poll(()=>hasCursorSend(framesByConnection[1]||[])).toBe(true);
