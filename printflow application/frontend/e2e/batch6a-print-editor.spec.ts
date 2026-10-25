@@ -60,6 +60,7 @@ test('print editor supports templates, canvas layers, ordering, undo/redo, save 
  },{pdfBase64:comparisonPdf,fontBase64:printFont.toString('base64')});
  expect(rasterComparison.pdfWidth).toBe(rasterComparison.svgWidth);expect(rasterComparison.iou).toBeGreaterThan(.72);
  await editor.getByRole('button',{name:'Add text'}).click();await expect(editor.locator('svg').getByText('Your text',{exact:true})).toBeVisible();
+ await test.step('SVG wrapping follows PDF letter spacing for positive and negative spacing',async()=>{await editor.locator('.print-editor-layer-list li').last().getByRole('button').click();await editor.locator('.print-editor-side textarea').first().fill('WWWWWWWW');await editor.getByLabel('Width',{exact:true}).fill('25');await editor.getByLabel('Height',{exact:true}).fill('100');const spacing=editor.getByLabel('Character spacing (pt)'),lines=editor.locator('.print-editor-layer.selected text tspan');await spacing.fill('10');const positiveLines=await lines.count();await spacing.fill('-2');const negativeLines=await lines.count();expect(positiveLines).toBeGreaterThan(negativeLines);});
  if(testInfo.project.name==='desktop'){
   const x=editor.getByLabel('X (mm)'),originalX=Number(await x.inputValue()),layer=editor.locator('.print-editor-layer').last();await layer.scrollIntoViewIfNeeded();const box=await layer.boundingBox();expect(box).not.toBeNull();
   await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2);await page.mouse.down();await page.mouse.move(box!.x+box!.width/2+36,box!.y+box!.height/2+18,{steps:4});await page.mouse.up();

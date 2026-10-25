@@ -5,7 +5,8 @@
 Branch: `feature/workflow-redesign-batch6b`
 
 Correction base: `9d1f94ec4641ed7b039d7cef472c0041ec6ccd64`
-Status: Batch 6B implementation and focused acceptance complete on this branch. Not merged or deployed.
+Final correction base: `b56ad3ef795a9e0f13e588ae457556c2a47b3352`
+Status: Batch 6B implementation is complete on this branch. Final corrections are committed separately; see the correction-pass verification below. Not merged or deployed.
 
 This batch extends the Batch 6A editor with versioned multipage documents, per-page print geometry, richer typography and image treatment, advisory preflight snapshots, and a provider boundary for design suggestions. Existing project authorization, malware scanning, immutable proof publishing, exact proof hashes, stale revision checks, approval invalidation and production gates remain authoritative.
 
@@ -28,6 +29,7 @@ This batch extends the Batch 6A editor with versioned multipage documents, per-p
 - Provider-neutral suggestion interface with a deterministic local provider for safe layout suggestions. A saved revision is required; suggestions must be previewed and explicitly applied, become ordinary undoable draft edits, and are rejected when stale. No external service is called and no AI credential is required.
 - Manual ChatGPT Plus handoff: export a contact-free design brief and current V2 JSON, copy a project-specific prompt, then paste or select generated JSON. The browser strictly validates V2 structure and limits, verifies every image reference against the project’s clean/scanned assets, previews variations and all-page differences, and requires explicit confirmation before local apply. Apply is undoable and still must save against the current optimistic revision. No content is sent to ChatGPT and no browser cookies or credentials are accessed.
 - V2 documents reject missing/duplicate pages, invalid active-page projections and malformed V1/V2 combinations. Export and preflight inspect image headers with dimension/pixel bounds before decoding. Preflight caches each asset inspection per report, accounts for fit mode in aspect findings, and uses letter spacing in text wrapping.
+- Browser SVG wrapping now applies `letterSpacingPt` in CSS-pixel units and counts Unicode code points using the same spacing rule as the PDF exporter's text-width calculation. CONTAIN effective DPI uses the rendered image dimensions after aspect-preserving fit, excluding unused frame padding; STRETCH and COVER retain their corresponding scale calculations.
 - Mobile editor retains a single-column layout and compact page navigation.
 
 ## Deliberately not claimed
@@ -59,6 +61,16 @@ All commands below ran on 26 Oct 2026 using Java 21, native PostgreSQL 17.11, th
 - `git diff --check` — **PASS** after final edits.
 
 The temporary UI test server and isolated PostgreSQL cluster were stopped after verification. They do not change the normal local service configuration.
+
+### Final correction pass — 26 Oct 2026
+
+- `.\gradlew.bat test --tests com.printflow.files.PrintDesignPdfTest --tests com.printflow.files.PrintPreflightMetricsTest` — **PASS**. Tests include positive/negative PDF letter-spacing width and wrapping, and fit-aware CONTAIN/STRETCH/COVER DPI calculations.
+- `.\gradlew.bat compileIntegrationTestJava` — **PASS**. The integration regression source compiles and asserts that the persisted HTTP preflight finding for a CONTAIN layer reports the actual fitted-size DPI.
+- `npm.cmd run typecheck -- --incremental false` — **PASS**.
+- `$env:PLAYWRIGHT_BASE_URL='http://localhost:3001'; npm.cmd exec -- playwright test e2e/batch6a-print-editor.spec.ts --grep "print editor supports" --project=desktop --max-failures=1 --reporter=line` — **PASS**, 1 desktop test. The SVG regression checks that positive spacing wraps into more lines than negative spacing. Browser API fixtures are synthetic.
+- `git diff --check` — **PASS**.
+- The authenticated PostgreSQL integration suite was **not rerun** during this correction pass: port 5432 had no PostgreSQL listener, and no database or service was started for this narrowly scoped correction. The new integration assertion is compile-verified; runtime verification remains the follow-up limitation for this correction. The previous revision's 15-test PostgreSQL integration result above remains historical evidence for the unchanged authorization, scan, preflight persistence, and proof-approval paths, but does not verify this new DPI assertion at runtime.
+- The temporary Next.js process on port 3001 was stopped after the browser test. No normal database or application service was stopped or modified.
 
 ## Visual evidence
 

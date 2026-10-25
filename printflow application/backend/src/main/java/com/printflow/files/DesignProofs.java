@@ -85,7 +85,7 @@ public class DesignProofs {
    var inspected=inspectedImages.computeIfAbsent(layer.assetId(),assetId->inspectPreflightImage(enquiry,assetId));
    if(!inspected.code().isEmpty()){findings.add(new DesignPreflightService.Finding(inspected.code(),inspected.status(),inspected.status(),page.id(),layer.id(),inspected.message()));continue;}
    try{
-    double dpi=PrintPreflightMetrics.effectiveDpi(inspected.width(),inspected.height(),layer.widthMm(),layer.heightMm());
+    double dpi=PrintPreflightMetrics.effectiveDpi(inspected.width(),inspected.height(),layer.widthMm(),layer.heightMm(),layer.effectiveImageFit());
     String message=String.format(java.util.Locale.ROOT,"Effective resolution is %.0f DPI at this layer size. The 150 DPI screen is advisory; confirm the product and press requirement.",dpi);
     findings.add(new DesignPreflightService.Finding("IMAGE_EFFECTIVE_DPI",dpi<150?"WARNING":"PASS",dpi<150?"WARNING":"INFO",page.id(),layer.id(),message));
     double sourceRatio=inspected.width()/(double)inspected.height(),frameRatio=layer.widthMm()/layer.heightMm();

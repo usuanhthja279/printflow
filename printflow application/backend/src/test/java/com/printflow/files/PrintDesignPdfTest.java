@@ -69,11 +69,12 @@ class PrintDesignPdfTest {
         java.util.zip.CRC32 crc=new java.util.zip.CRC32();crc.update(bytes,12,17);long value=crc.getValue();for(int i=0;i<4;i++)bytes[29+i]=(byte)(value>>>(24-i*8));
         assertThrows(IllegalArgumentException.class,()->PrintDesignPdf.readBoundedImage(bytes));
     }
-    @Test void letterSpacingIsIncludedInWidthAndTextWrapping() throws Exception {
+    @Test void positiveAndNegativeLetterSpacingAreIncludedInWidthAndTextWrapping() throws Exception {
         var font=new org.apache.pdfbox.pdmodel.font.PDType1Font(org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA);
-        String text="PRINT SAFE";float plain=PrintDesignPdf.textWidth(font,text,12,0),spaced=PrintDesignPdf.textWidth(font,text,12,1.5f);
-        assertTrue(spaced>plain);
-        assertTrue(exporter.wrap(font,text,12,(plain+spaced)/2,1.5f).size()>exporter.wrap(font,text,12,(plain+spaced)/2,0).size());
+        String text="PRINT SAFE";float plain=PrintDesignPdf.textWidth(font,text,12,0),positive=PrintDesignPdf.textWidth(font,text,12,1.5f),negative=PrintDesignPdf.textWidth(font,text,12,-1.5f);
+        assertTrue(positive>plain);assertTrue(negative<plain);
+        assertTrue(exporter.wrap(font,text,12,(plain+positive)/2,1.5f).size()>exporter.wrap(font,text,12,(plain+positive)/2,0).size());
+        assertTrue(exporter.wrap(font,text,12,(plain+negative)/2,-1.5f).size()<=exporter.wrap(font,text,12,(plain+negative)/2,0).size());
     }
     @Test void imageFitCalculationsPreserveContainAndCenterCropCoverGeometry() {
         var contain=PrintDesignPdf.imageFit(100,100,1600,800,"CONTAIN");
