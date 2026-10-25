@@ -89,11 +89,23 @@ class DesignProofIntegrationTest {
   var taskResponse=artist.send("POST",base(lead)+"/tasks",taskBody,true);assertEquals(200,taskResponse.statusCode(),taskResponse.body());
   String queue="/api/v1/design/queue";var rows=(List<Map<String,Object>>)json.readValue(artist.send("GET",queue,null,false).body(),List.class);var row=rows.stream().filter(item->lead.toString().equals(item.get("id").toString())).findFirst().orElseThrow();
   assertEquals(jdbc.queryForObject("select public_id from enquiries where id=?",UUID.class,lead).toString(),row.get("public_id").toString());assertEquals(true,row.get("quote_accepted"));assertEquals(1,((Number)row.get("latest_proof_revision")).intValue());assertEquals("CLEAN",row.get("latest_proof_scan_state"));assertNull(row.get("latest_proof_decision"));assertEquals(true,row.get("latest_proof_current_agreement"));assertEquals(1,((Number)row.get("unresolved_feedback_count")).intValue());assertEquals(LocalDate.now().plusDays(3).toString(),row.get("next_task_due_date"));
-  assertEquals(403,seller.send("GET",queue,null,false).statusCode());assertEquals(403,buyer.send("GET",queue,null,false).statusCode());assertEquals(404,otherSeller.send("GET",base(lead),null,false).statusCode());
+  assertEquals(403,seller.send("GET",queue,null,false).statusCode());assertEquals(403,buyer.send("GET",queue,null,false).statusCode());assertEquals(404,otherSeller.send("GET",base(lead),null,false).statusCode());assertEquals(200,artist.send("GET",base(lead)+"/designer-project",null,false).statusCode());assertEquals(403,seller.send("GET",base(lead)+"/designer-project",null,false).statusCode());assertEquals(403,buyer.send("GET",base(lead)+"/designer-project",null,false).statusCode());
   assertEquals(200,artist.send("POST",base(lead)+"/comments/"+comment.get("id")+"/resolve","{\"note\":\"Moved the heading\"}",true).statusCode());
   var secondArtifact=file(artist,lead);var secondProof=publish(lead,secondArtifact.get("id"),1);rows=(List<Map<String,Object>>)json.readValue(artist.send("GET",queue,null,false).body(),List.class);row=rows.stream().filter(item->lead.toString().equals(item.get("id").toString())).findFirst().orElseThrow();assertEquals(2,((Number)row.get("latest_proof_revision")).intValue());assertEquals(0,((Number)row.get("unresolved_feedback_count")).intValue());assertNull(row.get("latest_proof_decision"));
   assertEquals(200,buyer.send("POST",base(lead)+"/proofs/"+secondProof.get("id")+"/decision",decision(secondProof,"APPROVE","Approved updated title"),true).statusCode());rows=(List<Map<String,Object>>)json.readValue(artist.send("GET",queue,null,false).body(),List.class);row=rows.stream().filter(item->lead.toString().equals(item.get("id").toString())).findFirst().orElseThrow();assertEquals("APPROVE",row.get("latest_proof_decision"));
-  jdbc.update("update enquiries set designer_id=null where id=?",lead);rows=(List<Map<String,Object>>)json.readValue(artist.send("GET",queue,null,false).body(),List.class);assertTrue(rows.stream().noneMatch(item->lead.toString().equals(item.get("id").toString())));
+  jdbc.update("update enquiries set designer_id=null where id=?",lead);rows=(List<Map<String,Object>>)json.readValue(artist.send("GET",queue,null,false).body(),List.class);assertTrue(rows.stream().noneMatch(item->lead.toString().equals(item.get("id").toString())));assertEquals(404,artist.send("GET",base(lead)+"/designer-project",null,false).statusCode());
+ }
+ @Test void designerProjectAccessIsNotBoundedByTheDashboardQueue()throws Exception{
+  UUID target=lead();List<UUID> generated=new ArrayList<>();generated.add(target);
+  try{
+   jdbc.update("update enquiries set created_at=current_timestamp-interval '2 days' where id=?",target);
+   for(int i=0;i<101;i++)generated.add(lead());
+   var rows=(List<Map<String,Object>>)json.readValue(artist.send("GET","/api/v1/design/queue",null,false).body(),List.class);
+   assertEquals(100,rows.size());assertTrue(rows.stream().noneMatch(row->target.toString().equals(row.get("id").toString())));
+   var detail=artist.send("GET",base(target)+"/designer-project",null,false);assertEquals(200,detail.statusCode(),detail.body());assertEquals(target.toString(),data(detail).get("id").toString());
+   assertEquals(403,seller.send("GET",base(target)+"/designer-project",null,false).statusCode());
+   jdbc.update("update enquiries set designer_id=null where id=?",target);assertEquals(404,artist.send("GET",base(target)+"/designer-project",null,false).statusCode());
+  }finally{for(UUID id:generated){jdbc.update("delete from quote_versions where enquiry_id=?",id);jdbc.update("delete from enquiries where id=?",id);leads.remove(id);}}
  }
  @Test void acceptedAmendmentInvalidatesReadinessAndArtworkLinksStayScoped()throws Exception{
   UUID lead=lead(),old=acceptQuote(lead);var file=file(artist,lead);var proof=publish(lead,file.get("id"),0);assertEquals(200,buyer.send("POST",base(lead)+"/proofs/"+proof.get("id")+"/decision",decision(proof,"APPROVE","Approved original"),true).statusCode());

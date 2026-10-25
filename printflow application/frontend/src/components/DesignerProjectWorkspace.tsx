@@ -15,9 +15,7 @@ export default function DesignerProjectWorkspace({id}:{id:string}){
   try{
    const session=await api<StaffSession>('/v1/auth/session');
    if(session.role!=='DESIGNER'||session.mfaRequired||session.mustChangePassword)throw new ApiError('Sign in with the assigned designer account to open this project.',403);
-   const jobs=await api<DesignerJob[]>('/v1/design/queue');
-   const current=jobs.find(job=>job.id===id);
-   if(!current)throw new ApiError('This project is not assigned to your designer account.',404);
+   const current=await api<DesignerJob>('/v1/design/enquiries/'+id+'/designer-project');
    setProject(current);setError('');
   }catch(e){setProject(null);setError(e instanceof ApiError&&e.status===403?e.message:'This project is unavailable or is no longer assigned to your account.');}
   finally{setLoading(false);}
@@ -29,7 +27,7 @@ export default function DesignerProjectWorkspace({id}:{id:string}){
   <Link className="workspace-back" href="/business">← Assigned design projects</Link>
   <header className="designer-project-heading"><div><p className="overline">J.D.PRINTEX / DESIGN WORKSPACE · {printReference(project.public_id)}</p><h1>{PRODUCT_NAME(project.product_code)}</h1><p>{project.quantity.toLocaleString('en-IN')} copies · Customer: {project.customer_name}</p></div><div className="designer-project-status"><span>{designerProjectState(project)}</span><strong>Proof {project.latest_proof_revision?`v${project.latest_proof_revision}`:'not shared'}</strong></div></header>
   <section className="designer-project-next panel" aria-label="Designer next action"><div><small>YOUR NEXT ACTION</small><strong>{designerProjectNextAction(project)}</strong><span>{project.unresolved_feedback_count?`${project.unresolved_feedback_count} unresolved comments`:project.next_task_due_date?`Next task due ${project.next_task_due_date}`:'Review the authorized project record below'}</span></div><button type="button" className="btn btn-outline" disabled={loading} onClick={()=>{setLoading(true);void load();}}>Refresh project</button></section>
-  <nav className="designer-workspace-nav" aria-label="Design workspace sections"><a href="#project-overview">Overview</a><a href="#reference-artwork">Customer reference</a><a href="#design-upload">Design files</a><a href="#current-proof">Current proof</a><a href="#customer-feedback">Feedback</a><a href="#designer-tasks">Tasks</a><a href="#proof-history">Revisions</a><a href="#designer-conversation">Conversation</a></nav>
+  <nav className="designer-workspace-nav" aria-label="Design workspace sections"><a href="#project-overview">Overview</a><a href="#reference-artwork">Customer reference</a><a href="#design-upload">Design files</a><a href={"#current-proof-"+id}>Current proof</a><a href={"#customer-feedback-"+id}>Feedback</a><a href="#designer-tasks">Tasks</a><a href="#proof-history">Revisions</a><a href="#designer-conversation">Conversation</a></nav>
   <div className="designer-project-grid"><main className="designer-project-main">
    <section className="designer-overview-panel panel" id="project-overview"><div><small>Current proof</small><strong>{designerProjectState(project)}</strong></div><div><small>Customer feedback</small><strong>{project.unresolved_feedback_count} unresolved</strong></div><div><small>Assignment</small><strong>Assigned to you</strong></div></section>
    <DesignProofs leadId={id} inlineStudio onChanged={load}/>

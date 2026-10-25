@@ -7,10 +7,19 @@ for(const quarantine of [false,true])test(quarantine?'quarantined uploads cannot
  const workspace=()=>({artifacts:customer?artifacts.filter(a=>a.kind==='REFERENCE'||proofs.some(p=>p.artifact_id===a.id)):artifacts,proofs,comments,quoteAccepted:true,currentProofApproved:approved,closed:false,designerId:null});
  await page.route('**/api/**',async route=>{const req=route.request(),url=new URL(req.url()),path=url.pathname;let body:unknown={},status=200;if(path.endsWith('/preview')){await route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6XKwAAAAASUVORK5CYII=','base64')});return;}
   if(path==='/api/v1/auth/appearance')body={version:0,has_image:false,public_name:''};
-  else if(path.endsWith('/work'))body={liveWork:false,status:'REVIEWING',messages:[],mailConnected:false};
+  else if(path.endsWith('/work'))body={liveWork:false,status:'REVIEWING',productCode:'WEDDING_CARDS',messages:[],mailConnected:false};
   else if(path==='/api/v1/auth/session')body={id:ownerId,username:'proof-ui@example.test',role:customer?'CUSTOMER':'OWNER',mustChangePassword:false,mfaEnrolled:true,mfaRequired:false,mfaRecent:true};
   else if(path==='/api/v1/auth/csrf')body={token:'synthetic-csrf',headerName:'X-CSRF-TOKEN'};
   else if(path==='/api/v1/owner/staff')body=[];
+  else if(path==='/api/v1/production/queue')body=[];
+  else if(path==='/api/v1/owner/design-routing/summary')body={pendingAssignmentCount:0};
+  else if(path==='/api/v1/owner/design-routing')body=[];
+  else if(path.endsWith('/payments/gateway'))body={configured:false,mode:'TEST',webhooksConfigured:false};
+  else if(path.endsWith('/payments'))body={quoteId,quoteVersion:1,totalPaise:125050,paidPaise:0,balancePaise:125050,overpaidPaise:0,stage:'NOT_STARTED',policy:null,policyCurrent:false,owner:true,customer:false,closed:false,released:false,receipts:[],invoices:[]};
+  else if(path.endsWith('/orders'))body=[];
+  else if(path.endsWith('/samples'))body=[];
+  else if(path.endsWith('/quote-draft'))body={revision:0,payload:'{}'};
+  else if(path==='/api/public/templates/WEDDING_CARDS')body={};
   else if(path==='/api/v1/staff/enquiries')body=[lead];
   else if(path.endsWith('/activities'))body=[];
   else if(path.endsWith('/quotes'))body=[{id:quoteId,version:1,scope:'250 cards',total_paise:125050,terms:'Synthetic agreement',requested_date:null,proposed_date:'2026-11-10',valid_until:'2026-11-01',specification_snapshot:'{}',state:'ACCEPTED',issued_at:'2026-10-24T00:00:00Z',response_note:null}];
@@ -25,6 +34,7 @@ for(const quarantine of [false,true])test(quarantine?'quarantined uploads cannot
   else if(path==='/api/v1/customer/enquiries/'+leadId)body={id:leadId,public_id:leadId,product_code:'WEDDING_CARDS',quantity:250,status:'REVIEWING',notes:'Synthetic proof job'};
   else if(path==='/api/v1/customer/privacy'||path==='/api/v1/customer/sso')body=[];
   else if(path==='/api/public/sso/providers')body=[];
+  else if(path==='/api/public/print-vocabulary')body=[];
   else throw Error('Unexpected design UI fixture route: '+path);
   await route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
  });

@@ -57,9 +57,7 @@ public class DesignProofs {
   StringBuilder text=new StringBuilder("Artwork review requested: "+a.get("display_name")+"\n\n"+input.note().trim());int n=0;for(var pin:input.pins())text.append("\n").append(++n).append(". Page ").append(pin.page()).append(": ").append(pin.text());text.append("\n\nAn annotated PDF review copy is attached. The source artwork is unchanged. Open the workspace for page pins and the original file.");db.update("insert into work_events(id,enquiry_id,actor_id,kind,message) values(?,?,?,'REFERENCE_REVIEW',?)",feedback,id,user.id(),"Reference artwork review requested: "+a.get("display_name"));notifications.referenceReview(id,feedback,text.toString());return Map.of("id",feedback,"code","REFERENCE_REVIEW_SENT");
  }
  @Transactional(readOnly=true) public Download referenceCopy(StaffPrincipal user,UUID id,UUID feedback)throws IOException{lead(user,id,false,false);var rows=db.queryForList("select review_pdf,review_sha256 from reference_feedback where id=? and enquiry_id=?",feedback,id);if(rows.isEmpty())throw new NoSuchElementException();byte[] bytes=(byte[])rows.getFirst().get("review_pdf");try{if(!HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)).equals(rows.getFirst().get("review_sha256")))throw new IOException("Review copy integrity failed");}catch(java.security.NoSuchAlgorithmException impossible){throw new IllegalStateException(impossible);}return new Download(new ByteArrayInputStream(bytes),bytes.length,"Artwork-review-"+feedback+".pdf","application/pdf");}
- @Transactional(readOnly=true) public List<Map<String,Object>> designerQueue(StaffPrincipal user){
-  if(!"DESIGNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-  return db.queryForList("""
+ private static final String DESIGNER_PROJECTION="""
    select e.id,e.public_id,e.customer_name,e.product_code,e.quantity,e.status,
     exists(select 1 from quote_versions q where q.enquiry_id=e.id and q.state='ACCEPTED') as quote_accepted,
     p.revision as latest_proof_revision,p.display_name as latest_proof_name,p.summary as latest_proof_summary,
@@ -73,10 +71,19 @@ public class DesignProofs {
     left join proof_decisions d on d.proof_id=p.id
     where p.enquiry_id=e.id order by p.revision desc limit 1
    ) p on true
+   """;
+ @Transactional(readOnly=true) public List<Map<String,Object>> designerQueue(StaffPrincipal user){
+  if(!"DESIGNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+  return db.queryForList(DESIGNER_PROJECTION+"""
    where e.designer_id=? and e.status<>'NEW'
    order by case when e.status='CLOSED' then 1 else 0 end,e.created_at desc,e.id
    limit 100
    """,user.id());
+ }
+ @Transactional(readOnly=true) public Map<String,Object> designerProject(StaffPrincipal user,UUID id){
+  if(!"DESIGNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+  lead(user,id,false,false);
+  return db.queryForMap(DESIGNER_PROJECTION+" where e.id=? and e.designer_id=?",id,user.id());
  }
  @Transactional public void assign(StaffPrincipal user,UUID enquiry,Assignment assignment){
   if(!"OWNER".equals(user.role()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);lead(user,enquiry,true,true);
