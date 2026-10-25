@@ -35,6 +35,15 @@
 - Separate startup failures from page/test failures: first confirm the existing web service responds at `PLAYWRIGHT_BASE_URL` (default `http://127.0.0.1:3000`), then run one relevant spec with `--max-failures=1`. Fix a selector or synthetic fixture from the failing assertion and rerun that spec only; do not rebuild/restart unless application code/configuration changed.
 - The first Batch 1 browser attempt was blocked by the filesystem sandbox before page checks; subsequent focused Playwright runs completed. Use this recovery path rather than repeating exploratory Edge launches.
 
+### Local Windows testing and process ownership
+
+- Before a Gradle command, resolve Java 21 instead of assuming a fresh shell inherits `JAVA_HOME`. Check `Get-Command java`, then common user-managed locations such as `$env:USERPROFILE\.jdks\*` and `$env:USERPROFILE\.gradle\jdks\*`. For an installed JDK, set `$env:JAVA_HOME` and prepend its `bin` to `$env:Path` in the same PowerShell command that invokes `backend\gradlew.bat`. Do not install another JDK just because a new shell has no Java path.
+- Use native PostgreSQL on port 5432, Spring API on 8080 and the UI on 3000 for normal local work. Read `.env` values into the current process without printing them; map `POSTGRES_*` to `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` where Gradle needs those names. Do not copy secrets into tracked files, command output or test evidence.
+- Batch migrations and backend changes, then run one focused Gradle command. Avoid overlapping Gradle invocations against the same checkout; wait for the current command to finish before starting another to prevent daemon/build locks. Do not use Docker or Compose.
+- Isolate temporary acceptance data in a dedicated test database/schema and synthetic users/artifacts. Never reset, truncate or drop the user's normal local database. Verify the target database name and port before any cleanup.
+- Keep build and browser-test outputs in the active worktree. Reuse installed dependencies only when package versions match the lockfile; do not use writable junctions to another checkout's `node_modules` because npm cleanup can follow them and Next may resolve outside the worktree.
+- Stop only processes started for the current task, by recorded process ID and verified command line. Do not stop an already running UI/API/PostgreSQL service belonging to another checkout unless the user explicitly asks and the target is confirmed. Leave task-started servers stopped by default at completion; keep them running only when the user explicitly asks.
+
 ## Visual evidence for UI changes
 
 - For every significant screen or interaction change, capture the actual app in a browser before and after when the baseline is available. Use 1440 × 900 desktop and 390 × 844 mobile viewports for responsive screens.

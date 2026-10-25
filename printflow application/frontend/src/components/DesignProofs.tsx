@@ -6,6 +6,7 @@ import ReferenceArtwork from './ReferenceArtwork';
 import ProofImage from './ProofImage';
 
 import DesignManagement,{DesignTask} from './DesignManagement';
+import PrintDesignEditor from './PrintDesignEditor';
 
 import {FormEvent,useEffect,useState} from 'react';
 
@@ -18,7 +19,7 @@ type Proof={media_type?:string;page_count?:number;id:string;revision:number;arti
 
 type Comment={id:string;proof_id:string;author_role:string;body:string;page_number:number|null;anchor_x?:number|null;anchor_y?:number|null;created_at:string;resolution_note?:string|null};
 
-type Workspace={artifacts:Artifact[];proofs:Proof[];comments:Comment[];quoteAccepted:boolean;currentProofApproved:boolean;closed:boolean;designerId?:string|null;tasks?:DesignTask[]};
+type Workspace={artifacts:Artifact[];proofs:Proof[];comments:Comment[];quoteAccepted:boolean;currentProofApproved:boolean;closed:boolean;referenceEditable:boolean;productCode:string;designerId?:string|null;tasks?:DesignTask[]};
 
 export default function DesignProofs({leadId,customer=false,canEdit=true,owner=false,canRecordOffline=false,inlineStudio=false,onChanged}:{leadId:string;customer?:boolean;canEdit?:boolean;owner?:boolean;canRecordOffline?:boolean;inlineStudio?:boolean;onChanged?:()=>Promise<void>}){
 
@@ -78,6 +79,8 @@ if(customer&&!data?.quoteAccepted)return <ReferenceArtwork leadId={leadId} custo
  return <section className="design-section" aria-label="Design proofs"><h3>Design files & proof review</h3><p className="hint">Review the artwork on screen, including every page, names, dates, spelling, size and layout. Mark locations to request changes from the designer. Approval applies only to that revision.</p>{newRevision&&<div className="proof-live-update" role="status"><strong>A new proof revision is available.</strong><p>Refresh the artwork details before reviewing or approving; the current view has not been replaced.</p><button className="btn btn-outline btn-small" type="button" onClick={()=>{setNewRevision(null);void load().catch(()=>setError('Could not load the new proof revision.'));}}>Load new revision</button></div>}{!data?<p>Loading design workspace…</p>:<>
 
  <div className="design-readiness"><span>Quotation: <strong>{data.quoteAccepted?'Accepted':'Awaiting acceptance'}</strong></span><span>Current proof: <strong>{data.currentProofApproved?'Approved':latest?.current_agreement===false?'Agreement changed — new proof required':latest?.decision==='REJECT'?'Rejected':latest?.decision==='REQUEST_CHANGES'?'Changes requested':latest?'Awaiting approval':'Not shared'}</strong></span></div><p className="hint">Production requires a separate staff release.</p>
+
+ {data.quoteAccepted&&data.referenceEditable&&!data.closed&&(customer||inlineStudio)&&<PrintDesignEditor key={leadId} leadId={leadId} customer={customer} productCode={data.productCode} proofRevision={latest?.revision||0} onPublished={async()=>{await load();await onChanged?.();}}/>}
 
  {owner&&<form className="design-assignment" onSubmit={e=>{e.preventDefault();act(async()=>{await staffMutation(base+'/designer','POST',{designerId:designer||null});setMessage('Designer assignment saved. Refresh the enquiry queue before changing other enquiry details.');});}}><label className="field">Assigned designer<select disabled={busy||data.closed} value={designer} onChange={e=>setDesigner(e.target.value)}><option value="">Unassigned</option>{designers.map(d=><option key={d.id} value={d.id}>{d.username}</option>)}</select></label><button className="btn btn-outline" disabled={busy||data.closed}>Save designer assignment</button></form>}
 
