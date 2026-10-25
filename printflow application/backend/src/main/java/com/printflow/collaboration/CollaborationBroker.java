@@ -69,6 +69,14 @@ public class CollaborationBroker {
             Map<String,Object> data=new HashMap<>();data.put("participant",label(user.role()));data.put("samePage",same);data.put("page",current==null?null:current.page);data.put("proofRevisionId",current==null?null:current.proof);
             if(same){data.put("x",current.x);data.put("y",current.y);}
             send(target,new Event(1,UUID.randomUUID(),"cursor.moved",project,current==null?null:current.proof,Instant.now(),data));
+
+            // Any context reannouncement (including reconnect replay) also
+            // returns the other user's visible pointer when both are viewing
+            // the same proof/page; this avoids waiting for another mouse move.
+            Cursor remote=target.cursor;boolean remoteSame=remote!=null&&remote.x!=null&&remote.y!=null&&current!=null&&remote.proof.equals(current.proof)&&remote.page==current.page;
+            Map<String,Object> remoteData=new HashMap<>();remoteData.put("participant",label(target.user.role()));remoteData.put("samePage",remoteSame);remoteData.put("page",remote==null?null:remote.page);remoteData.put("proofRevisionId",remote==null?null:remote.proof);
+            if(remoteSame){remoteData.put("x",remote.x);remoteData.put("y",remote.y);}
+            send(sender,new Event(1,UUID.randomUUID(),"cursor.moved",project,remote==null?null:remote.proof,Instant.now(),remoteData));
         }
     }
 

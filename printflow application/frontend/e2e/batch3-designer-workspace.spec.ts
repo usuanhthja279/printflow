@@ -94,4 +94,25 @@ test('customer proof review shows revision history, handles stale approval, and 
  await expect.poll(()=>fixture.decisionAttempts()).toBe(2);await page.screenshot({path:path.join(evidenceRoot,'customer-approved-proof-desktop.png'),fullPage:true});await captureViewport(page,'customer-approved-proof-desktop-viewport.png');
 });
 
+test('collaboration replays the selected proof page after reconnect and subscription',async({page})=>{
+ page.setDefaultTimeout(10000);await installFixtures(page,'CUSTOMER');
+ const framesByConnection:string[][]=[],sockets:import('@playwright/test').WebSocketRoute[]=[];
+ await page.routeWebSocket(/\/collaboration\/ws(?:\?.*)?$/,socket=>{
+  sockets.push(socket);const frames:string[]=[];framesByConnection.push(frames);
+  socket.onMessage(message=>{const wire=String(message);frames.push(wire);if(wire.startsWith('CONNECT\n'))socket.send('CONNECTED\nversion:1.2\nheart-beat:0,0\n\n\u0000');});
+ });
+ await page.goto('/customer',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'View enquiry',exact:true}).click();
+ await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
+ const hasCursorSend=(frames:string[])=>frames.some(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
+ await expect.poll(()=>hasCursorSend(framesByConnection[0]||[])).toBe(true);
+ await sockets[0].close({code:1001,reason:'synthetic reconnect test'});
+ await expect.poll(()=>framesByConnection.length).toBeGreaterThan(1);
+ await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
+ await expect.poll(()=>hasCursorSend(framesByConnection[1]||[])).toBe(true);
+ const replayFrames=framesByConnection[1],subscribeIndex=replayFrames.findIndex(frame=>frame.startsWith('SUBSCRIBE\n')&&frame.includes('/user/queue/collaboration/'+customerId)),replayIndex=replayFrames.findIndex(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
+ expect(subscribeIndex).toBeGreaterThanOrEqual(0);expect(replayIndex).toBeGreaterThan(subscribeIndex);
+ const body=replayFrames[replayIndex].slice(replayFrames[replayIndex].indexOf('\n\n')+2).split('\u0000')[0];
+ expect(JSON.parse(body)).toMatchObject({proofRevisionId:currentProof,page:1,hidden:false});
+});
+
 test.beforeAll(()=>{mkdirSync(evidenceRoot,{recursive:true});mkdirSync(batch3bEvidenceRoot,{recursive:true});});

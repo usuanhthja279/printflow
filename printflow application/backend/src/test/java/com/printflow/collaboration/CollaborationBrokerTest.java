@@ -2,9 +2,14 @@ package com.printflow.collaboration;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 
 import com.printflow.files.DesignProofs;
 import com.printflow.identity.StaffDirectory;
@@ -55,5 +60,22 @@ class CollaborationBrokerTest {
     @Test void rechecksTheAccountAndProjectOnEachHeartbeat(){
         assertDoesNotThrow(()->broker.heartbeat("socket-1",customer,project));
         verify(proofs,org.mockito.Mockito.atLeastOnce()).authorizeCollaboration(customer,project);
+    }
+
+    @Test void replaysTheRemotePointerWhenAParticipantReannouncesTheirView(){
+        StaffPrincipal designer=new StaffPrincipal(UUID.randomUUID(),"designer@example.test","hash","DESIGNER",true,false,1);
+        HttpSession designerSession=mock(HttpSession.class);
+        when(designerSession.getAttribute("SPRING_SECURITY_CONTEXT")).thenReturn(new SecurityContextImpl(new UsernamePasswordAuthenticationToken(designer,"n/a")));
+        when(directory.current(designer)).thenReturn(true);
+        broker.join("socket-2",designer,designerSession,project);
+        clearInvocations(messaging);
+        broker.cursor("socket-2",designer,project,new CollaborationBroker.CursorPacket(proof,2,0.2,0.8,false));
+        clearInvocations(messaging);
+
+        // A customer's reconnect/page replay carries proof and page, without pointer coordinates.
+        broker.cursor("socket-1",customer,project,new CollaborationBroker.CursorPacket(proof,2,null,null,false));
+
+        verify(messaging).convertAndSendToUser(eq(customer.getUsername()),eq("/queue/collaboration/"+project),argThat(event->event instanceof CollaborationBroker.Event e&&e.type().equals("cursor.moved")&&"Designer".equals(e.data().get("participant"))&&Boolean.TRUE.equals(e.data().get("samePage"))&&Double.valueOf(0.2).equals(e.data().get("x"))&&Double.valueOf(0.8).equals(e.data().get("y"))),anyMap());
+        assertTrue(broker.subscribed("socket-2",project));
     }
 }

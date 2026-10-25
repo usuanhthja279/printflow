@@ -36,7 +36,9 @@ final class CollaborationChannelInterceptor implements ChannelInterceptor {
             authorize(staff,project);broker.join(accessor.getSessionId(),staff,session,project);
             return message;
         }
-        if(command==StompCommand.MESSAGE){
+        // Client-to-server STOMP frames use SEND. MESSAGE is reserved for
+        // server-to-client delivery and is not a valid inbound operation.
+        if(command==StompCommand.SEND){
             StaffPrincipal staff=staff(accessor);Matcher match=APP.matcher(nullToEmpty(accessor.getDestination()));
             if(!match.matches()||!valid(accessor,staff))throw new AccessDeniedException("Collaboration message denied");
             UUID project=parse(match.group(1));authorize(staff,project);

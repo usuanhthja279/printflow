@@ -73,6 +73,23 @@ tasks.register('browserFixtures', JavaExec) {
     }
 }
 
+// Synthetic customer/designer sessions for real local collaboration browser acceptance.
+tasks.register('collaborationBrowserFixture', JavaExec) {
+    description = 'Create a private synthetic customer/designer project for native local collaboration acceptance'
+    group = 'verification'
+    dependsOn integrationTestClasses
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    mainClass = 'com.printflow.CollaborationBrowserFixture'
+    workingDir = projectDir
+    maxHeapSize = '192m'
+    args providers.gradleProperty('fixtureMode').getOrElse('prepare')
+    doFirst {
+        def cache = rootProject.file('../.local/integration-classpath.txt')
+        cache.parentFile.mkdirs()
+        cache.text = sourceSets.integrationTest.runtimeClasspath.asPath
+    }
+}
+
 tasks.register('invoiceEmailEvidence', JavaExec) {
     description = 'Queue one owner-authorized synthetic invoice test copy to the configured private inbox'
     dependsOn integrationTestClasses
