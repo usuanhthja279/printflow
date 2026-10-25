@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.D.Printex Batch 3B evidence</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;margin:2rem auto;padding:0 1rem;max-width:1100px;color:#183342}h1{margin-bottom:.25rem}p{color:#496474}.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem}figure{margin:0;padding:1rem;border:1px solid #d6e1e5;border-radius:12px}img{display:block;width:100%;height:auto;border-radius:8px}figcaption{margin-top:.7rem;font-weight:650}small{display:block;color:#496474;font-weight:400}code{overflow-wrap:anywhere}
+</style>
+<h1>J.D.Printex · Batch 3B visual evidence</h1>
+<p>Actual browser captures of the synthetic designer/customer UI while the local collaboration WebSocket is unavailable. These show the reconnect fallback, not successful live collaboration.</p>
+<div class="gallery">
+<figure><a href="ui-fallback/designer-collaboration-fallback-desktop.png"><img src="ui-fallback/designer-collaboration-fallback-desktop.png" alt="Designer workspace at desktop size"></a><figcaption>Designer · 1440 × 900<small>Assigned project and reconnecting status.</small></figcaption></figure>
+<figure><a href="ui-fallback/designer-collaboration-fallback-mobile.png"><img src="ui-fallback/designer-collaboration-fallback-mobile.png" alt="Designer workspace at mobile size"></a><figcaption>Designer · 390 × 844<small>Project header and next action wrap without horizontal overflow.</small></figcaption></figure>
+<figure><a href="ui-fallback/customer-collaboration-fallback-desktop.png"><img src="ui-fallback/customer-collaboration-fallback-desktop.png" alt="Customer proof workspace at desktop size"></a><figcaption>Customer · 1440 × 900<small>Selected enquiry and reconnecting status.</small></figcaption></figure>
+<figure><a href="ui-fallback/customer-collaboration-fallback-mobile.png"><img src="ui-fallback/customer-collaboration-fallback-mobile.png" alt="Customer proof workspace at mobile size"></a><figcaption>Customer · 390 × 844<small>Selected enquiry panel and reconnecting status fit the mobile viewport.</small></figcaption></figure>
+</div>
+<h2>Verification scope</h2>
+<p>Four focused Playwright checks passed across desktop/mobile and designer/customer fixtures. TypeScript, Next.js production build and Gradle unit tests/integration-test compilation passed. Native PostgreSQL, Spring API, real STOMP delivery and two authenticated browser sessions were unavailable; no live collaboration pass is claimed.</p>
+</html>

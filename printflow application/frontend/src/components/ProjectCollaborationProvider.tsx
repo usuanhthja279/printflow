@@ -1,0 +1,45 @@
+"use client";
+
+import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+
+type Participant={label:string;role:string;self:boolean;viewingPage:number|null;proofRevisionId:string|null};
+type Event={version:number;eventId:string;type:string;projectId:string;proofRevisionId:string|null;at:string;data:Record<string,unknown>};
+type Cursor={label:string;proofRevisionId:string;page:number;x:number;y:number;expires:number};
+type ContextValue={status:string;participants:Participant[];cursors:Cursor[];lastEvent:Event|null;sendView:(proof:string,page:number)=>void;sendCursor:(proof:string,page:number,x:number,y:number)=>void;hideCursor:()=>void};
+const Context=createContext<ContextValue|null>(null);
+const NONE:ContextValue={status:'disconnected',participants:[],cursors:[],lastEvent:null,sendView:()=>{},sendCursor:()=>{},hideCursor:()=>{}};
+const frame=(command:string,headers:Record<string,string>,body='')=>command+'\n'+Object.entries(headers).map(([k,v])=>k+':'+v).join('\n')+'\n\n'+body+'\u0000';
+
+export function ProjectCollaborationProvider({projectId,children}:{projectId:string;children:ReactNode}){
+ const [status,setStatus]=useState('connecting'),[participants,setParticipants]=useState<Participant[]>([]),[cursors,setCursors]=useState<Cursor[]>([]),[lastEvent,setLastEvent]=useState<Event|null>(null);
+ const socket=useRef<WebSocket|null>(null),counter=useRef(0),retry=useRef(0),timers=useRef<ReturnType<typeof setTimeout>[]>([]),heartbeat=useRef<ReturnType<typeof setInterval>|null>(null),refresh=useRef<()=>void>(()=>{}),closedByUnmount=useRef(false);
+ const send=useCallback((destination:string,body:unknown)=>{const ws=socket.current;if(ws?.readyState===WebSocket.OPEN&&status==='connected')ws.send(frame('SEND',{'destination':destination,'content-type':'application/json'},JSON.stringify(body)));},[projectId,status]);
+ useEffect(()=>{closedByUnmount.current=false;let active=true;let ws:WebSocket|null=null;let reconnectTimer:ReturnType<typeof setTimeout>|null=null;let keepalive:ReturnType<typeof setInterval>|null=null;
+  const endpoint=()=>{if(process.env.NEXT_PUBLIC_COLLABORATION_URL)return process.env.NEXT_PUBLIC_COLLABORATION_URL;const local=['localhost','127.0.0.1'].includes(window.location.hostname);return local?'ws://'+window.location.hostname+':8080/collaboration/ws':(window.location.protocol==='https:'?'wss://':'ws://')+window.location.host+'/collaboration/ws';};
+  const schedule=()=>{if(!active||closedByUnmount.current)return;setStatus('reconnecting');const delay=Math.min(1500*2**Math.min(retry.current++,5),30000);reconnectTimer=setTimeout(connect,delay);};
+  const connect=async()=>{if(!active)return;setStatus(retry.current?'reconnecting':'connecting');try{
+   const response=await fetch('/api/v1/auth/csrf',{credentials:'same-origin',cache:'no-store'});if(!response.ok)throw new Error('session');const csrf=await response.json() as {token:string;headerName:string};
+   ws=new WebSocket(endpoint(),['v12.stomp']);socket.current=ws;let buffer='';let connected=false;
+   ws.onopen=()=>ws?.send(frame('CONNECT',{'accept-version':'1.2','heart-beat':'10000,10000',[csrf.headerName]:csrf.token}));
+   ws.onmessage=(msg)=>{if(typeof msg.data!=='string')return;if(msg.data.trim()===''&&buffer==='')return;buffer+=msg.data;let at:number;while((at=buffer.indexOf('\u0000'))>=0){const raw=buffer.slice(0,at).replace(/^\r?\n+/, '');buffer=buffer.slice(at+1);if(!raw.trim())continue;const split=raw.indexOf('\n\n');const headerText=split<0?raw:raw.slice(0,split);const body=split<0?'':raw.slice(split+2);const lines=headerText.split('\n');const command=lines.shift()?.trim();const headers=Object.fromEntries(lines.map(l=>{const i=l.indexOf(':');return i<0?[l,'']:[l.slice(0,i),l.slice(i+1)];}));
+     if(command==='CONNECTED'){connected=true;retry.current=0;setStatus('connected');ws?.send(frame('SUBSCRIBE',{id:'project-'+projectId,destination:'/user/queue/collaboration/'+projectId,ack:'auto'}));ws?.send(frame('SEND',{destination:'/app/collaboration/'+projectId+'/heartbeat','content-type':'application/json'},'{}'));if(keepalive)clearInterval(keepalive);keepalive=setInterval(()=>{if(ws?.readyState===WebSocket.OPEN){ws.send('\n');ws.send(frame('SEND',{destination:'/app/collaboration/'+projectId+'/heartbeat','content-type':'application/json'},'{}'));}},12000);if(retry.current===0)setLastEvent({version:1,eventId:'sync-'+Date.now(),type:'sync.required',projectId,proofRevisionId:null,at:new Date().toISOString(),data:{}});}
+     else if(command==='MESSAGE'){try{const event=JSON.parse(body) as Event;if(event.projectId!==projectId||event.version!==1)continue;setLastEvent(event);if(event.type==='presence.snapshot'&&Array.isArray(event.data.participants))setParticipants(event.data.participants as Participant[]);if(event.type==='cursor.moved'){const label=String(event.data.participant||'Participant');const same=event.data.samePage===true;setCursors(old=>[...old.filter(c=>c.label!==label),...(same&&typeof event.data.x==='number'&&typeof event.data.y==='number'? [{label,proofRevisionId:String(event.data.proofRevisionId),page:Number(event.data.page),x:Number(event.data.x),y:Number(event.data.y),expires:Date.now()+10000}]:[])]);}}catch{}}
+     else if(command==='ERROR'){setStatus('unavailable');ws?.close();}
+    }};
+   ws.onerror=()=>{};ws.onclose=(event)=>{if(keepalive){clearInterval(keepalive);keepalive=null;}if(socket.current===ws)socket.current=null;if(!active)return;if(event.code===1008){setStatus('revoked');return;}schedule();};
+  }catch{if(active)schedule();}};
+  refresh.current=()=>{if(ws?.readyState===WebSocket.OPEN)ws.send(frame('SEND',{destination:'/app/collaboration/'+projectId+'/heartbeat','content-type':'application/json'},'{}'));};void connect();
+  const cleanup=()=>{active=false;closedByUnmount.current=true;if(reconnectTimer)clearTimeout(reconnectTimer);if(keepalive)clearInterval(keepalive);if(ws?.readyState===WebSocket.OPEN)ws.send(frame('UNSUBSCRIBE',{id:'project-'+projectId}));ws?.close(1000,'workspace closed');socket.current=null;};
+  return cleanup;
+ },[projectId]);
+ useEffect(()=>{const timer=setInterval(()=>setCursors(old=>old.filter(c=>c.expires>Date.now())),1000);return()=>clearInterval(timer);},[]);
+ const lastCursor=useRef(0);
+ const currentView=useRef<{proof:string;page:number}|null>(null);
+ const sendView=useCallback((proof:string,page:number)=>{currentView.current={proof,page};send('/app/collaboration/'+projectId+'/cursor',{proofRevisionId:proof,page,hidden:false});},[projectId,send]);
+ const sendCursor=useCallback((proof:string,page:number,x:number,y:number)=>{const now=Date.now();if(now-lastCursor.current<120)return;lastCursor.current=now;send('/app/collaboration/'+projectId+'/cursor',{proofRevisionId:proof,page,x,y,hidden:false});},[projectId,send]);
+ const hideCursor=useCallback(()=>{const view=currentView.current;send('/app/collaboration/'+projectId+'/cursor',{...(view?{proofRevisionId:view.proof,page:view.page}:{}),hidden:true});},[projectId,send]);
+ const value=useMemo(()=>({status,participants,cursors,lastEvent,sendView,sendCursor,hideCursor}),[status,participants,cursors,lastEvent,sendView,sendCursor,hideCursor]);
+ const label=status==='connected'?'Live collaboration connected.':status==='reconnecting'?'Reconnecting. Saved comments remain available.':status==='revoked'?'Project collaboration access ended.':status==='unavailable'?'Live updates unavailable. Refresh to see recent changes.':'Connecting to live collaboration…';
+ return <Context.Provider value={value}><div className="collaboration-status" role="status" aria-live="polite"><span className={'collaboration-status-dot collaboration-'+status}/><span>{label}</span>{participants.filter(p=>!p.self).map((p,i)=><span className="presence-pill" key={p.role+'-'+i}>{p.label}{p.viewingPage?' · Page '+p.viewingPage:''}</span>)}</div>{children}</Context.Provider>;
+}
+export function useProjectCollaboration(){return useContext(Context)||NONE;}

@@ -8,6 +8,7 @@ import {StaffSession} from '@/lib/staff';
 import DesignProofs from './DesignProofs';
 import WorkConversation from './WorkConversation';
 import {DesignerJob,designerProjectNextAction,designerProjectState} from './DesignerWorkspace';
+import {ProjectCollaborationProvider} from './ProjectCollaborationProvider';
 
 export default function DesignerProjectWorkspace({id}:{id:string}){
  const [project,setProject]=useState<DesignerJob|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
@@ -23,7 +24,7 @@ export default function DesignerProjectWorkspace({id}:{id:string}){
  useEffect(()=>{void load();},[id]);
  if(loading)return <section className="page-section"><div className="container"><p role="status">Opening assigned design project…</p></div></section>;
  if(!project)return <section className="page-section"><div className="container designer-project-unavailable"><p className="overline">J.D.PRINTEX / DESIGN STUDIO</p><h1>Project unavailable</h1><p role={error?'alert':'status'}>{error||'Check the assignment and try again.'}</p><Link className="btn btn-ink" href="/business">Back to design projects</Link></div></section>;
- return <section className="page-section designer-project-page"><div className="container designer-project-container">
+ return <ProjectCollaborationProvider projectId={id}><section className="page-section designer-project-page"><div className="container designer-project-container">
   <Link className="workspace-back" href="/business">← Assigned design projects</Link>
   <header className="designer-project-heading"><div><p className="overline">J.D.PRINTEX / DESIGN WORKSPACE · {printReference(project.public_id)}</p><h1>{PRODUCT_NAME(project.product_code)}</h1><p>{project.quantity.toLocaleString('en-IN')} copies · Customer: {project.customer_name}</p></div><div className="designer-project-status"><span>{designerProjectState(project)}</span><strong>Proof {project.latest_proof_revision?`v${project.latest_proof_revision}`:'not shared'}</strong></div></header>
   <section className="designer-project-next panel" aria-label="Designer next action"><div><small>YOUR NEXT ACTION</small><strong>{designerProjectNextAction(project)}</strong><span>{project.unresolved_feedback_count?`${project.unresolved_feedback_count} unresolved comments`:project.next_task_due_date?`Next task due ${project.next_task_due_date}`:'Review the authorized project record below'}</span></div><button type="button" className="btn btn-outline" disabled={loading} onClick={()=>{setLoading(true);void load();}}>Refresh project</button></section>
@@ -32,5 +33,5 @@ export default function DesignerProjectWorkspace({id}:{id:string}){
    <section className="designer-overview-panel panel" id="project-overview"><div><small>Current proof</small><strong>{designerProjectState(project)}</strong></div><div><small>Customer feedback</small><strong>{project.unresolved_feedback_count} unresolved</strong></div><div><small>Assignment</small><strong>Assigned to you</strong></div></section>
    <DesignProofs leadId={id} inlineStudio onChanged={load}/>
   </main><aside className="designer-project-conversation" id="designer-conversation" aria-label="Project conversation"><WorkConversation leadId={id}/></aside></div>
- </div></section>;
+ </div></section></ProjectCollaborationProvider>;
 }

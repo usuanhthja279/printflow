@@ -9,6 +9,7 @@ import DesignProofs from './DesignProofs';
 import WorkConversation,{WorkData} from './WorkConversation';
 import {NextAction,customerNextAction,ProjectStageStepper,EntityActivity} from './WorkflowUI';
 import {printReference} from '@/lib/references';
+import {ProjectCollaborationProvider} from './ProjectCollaborationProvider';
 const targets={quotation:'work-agreement',design:'work-artwork',payment:'work-payments',production:'work-delivery',delivery:'work-delivery'};
 function revealAgreement(){const section=document.getElementById('work-agreement');if(section instanceof HTMLDetailsElement)section.open=true;}
 export default function LiveWork({id}:{id:string}){
@@ -17,7 +18,7 @@ export default function LiveWork({id}:{id:string}){
  useEffect(()=>{load().catch(()=>setError('This work is unavailable. Sign in with the customer account linked to it.'));},[id]);
  useEffect(()=>{const reveal=()=>{if(window.location.hash==='#work-agreement')revealAgreement();};reveal();window.addEventListener('hashchange',reveal);return()=>window.removeEventListener('hashchange',reveal);},[data?.liveWork]);
  const received=data?.logs.find(e=>e.kind==='REQUEST');
- return <section className="page-section live-work-page"><div className="container work-container"><Link className="workspace-back" href="/customer">← All your projects</Link>{error&&<p role="alert">{error}</p>}{!data&&!error&&<p role="status">Opening your project…</p>}{data&&!data.liveWork?<section className="panel"><h1>Review your quotation first</h1><p>Design and fulfilment open after the quotation is accepted.</p><Link href="/customer">Open your enquiries</Link></section>:data&&<>
+ return <section className="page-section live-work-page"><div className="container work-container"><Link className="workspace-back" href="/customer">← All your projects</Link>{error&&<p role="alert">{error}</p>}{!data&&!error&&<p role="status">Opening your project…</p>}{data&&!data.liveWork?<section className="panel"><h1>Review your quotation first</h1><p>Design and fulfilment open after the quotation is accepted.</p><Link href="/customer">Open your enquiries</Link></section>:data&&<ProjectCollaborationProvider projectId={id}>
  <header className="work-page-heading"><div><p className="overline">YOUR PRINT PROJECT · {printReference(data.publicId)}</p><h1>{PRODUCT_NAME(data.productCode)}</h1><p>{data.quantity.toLocaleString('en-IN')} copies · {data.status==='CLOSED'?'Closed work':'Active project'}{received&&' · Enquiry received '+new Date(received.created_at).toLocaleDateString('en-IN')}</p></div><div className="project-responsibility"><span>Design contact</span><strong>{data.designer||'Assignment pending'}</strong><a href="#project-conversation">Message the team ↗</a></div></header>
  {data.closureMessage&&<p className="panel">{data.closureMessage}</p>}
  <nav className="work-page-nav" aria-label="Work sections"><a href="#work-overview">Overview</a><a href="#work-artwork">Artwork & review</a><a href="#work-payments">Payments & invoices</a><a href="#work-delivery">Production & delivery</a><a href="#work-agreement" onClick={revealAgreement}>Quotation</a><a href="#work-history">Work log</a><a className="mobile-conversation-link" href="#project-conversation">Conversation</a></nav>
@@ -26,6 +27,6 @@ export default function LiveWork({id}:{id:string}){
  <PaymentsPanel leadId={id} onChanged={load}/><section id="work-delivery"><FulfilmentPanel leadId={id} customer onChanged={load}/></section>
  <details className="panel workflow-history" id="work-agreement"><summary>Quotation and commercial order</summary><Quotations leadId={id} customer closed={data.status==='CLOSED'}/></details>
  <details className="panel workflow-history" id="work-history"><summary>Work log</summary><ol className="work-log">{data.logs.map((event,i)=><EntityActivity key={i} source={event.kind==='PROOF'?'Artwork record':event.kind==='REQUEST'?'Enquiry record':'Project record'} time={event.created_at}><strong>{event.message}</strong></EntityActivity>)}</ol></details></div>
- <aside className="panel work-sidebar" id="project-conversation" aria-label="Project conversation and email"><WorkConversation leadId={id}/>{(data.contact.email||data.contact.phone)&&<address>{data.contact.email&&<p><a href={'mailto:'+data.contact.email}>{data.contact.email}</a></p>}{data.contact.phone&&<p><a href={'tel:'+data.contact.phone}>{data.contact.phone}</a></p>}</address>}</aside></div></>}
+ <aside className="panel work-sidebar" id="project-conversation" aria-label="Project conversation and email"><WorkConversation leadId={id}/>{(data.contact.email||data.contact.phone)&&<address>{data.contact.email&&<p><a href={'mailto:'+data.contact.email}>{data.contact.email}</a></p>}{data.contact.phone&&<p><a href={'tel:'+data.contact.phone}>{data.contact.phone}</a></p>}</address>}</aside></div></ProjectCollaborationProvider>}
  </div></section>;
 }

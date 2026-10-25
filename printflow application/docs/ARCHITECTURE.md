@@ -16,6 +16,7 @@ Use a **modular monolith**, not microservices. A single Spring Boot JVM hosts bu
 
 - Next.js customer homepage, validated enquiry page, token tracking, development-only owner prototype.
 - Next server rewrites same-origin `/api/*` to Spring Boot; browsers never need to call Docker `api:8080` directly.
+- Batch 3B collaboration uses the Spring in-memory STOMP broker. Browser sessions authenticate with the existing HTTP session plus STOMP CONNECT CSRF; explicit room authorization delegates to the existing per-project proof access check. REST remains authoritative for comments, decisions, proof files and conversation. Notifications are sent only after transaction commit and cause scoped REST resynchronization. Cursors/presence are ephemeral, bounded and single-backend-instance only. The `/api` rewrite does not proxy WebSocket Upgrade; see `docs/deployment/COLLABORATION_PROXY.md` for local and production routing.
 - Spring Boot `catalog` and `enquiry` domain, JPA repository, Flyway V1 migration, tracking token SHA-256 digest, status events.
 - PostgreSQL persistent Docker volume; `/actuator/health` checks service readiness.
 - No production auth yet. In production profile, `/api/demo/*` is not mapped. Public enquiry writes disabled by default.

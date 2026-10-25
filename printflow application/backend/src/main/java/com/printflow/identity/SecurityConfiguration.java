@@ -65,6 +65,7 @@ public class SecurityConfiguration {
             .requestCache(cache->cache.requestCache(new NullRequestCache()))
             .authorizeHttpRequests(auth->auth
                 .requestMatchers("/actuator/health","/api/public/**","/api/demo/**","/api/v1/auth/csrf","/error").permitAll()
+                .requestMatchers("/collaboration/ws").authenticated()
                 .requestMatchers(HttpMethod.POST,"/api/v1/auth/session").permitAll()
                 .requestMatchers("/api/v1/auth/**").authenticated()
                 .requestMatchers("/api/v1/staff/contacts/**","/api/v1/staff/contacts").hasAnyRole("OWNER","SALES","DESIGNER","ESTIMATOR","SUPERVISOR","OPERATOR","INVENTORY","ACCOUNTS","DELIVERY")

@@ -1,0 +1,13 @@
+{
+  "feature": "J.D.Printex Batch 3B collaboration",
+  "captureKind": "actual Playwright browser screenshots",
+  "data": "synthetic intercepted REST and artwork fixtures",
+  "backend": "Spring API and PostgreSQL unavailable; collaboration socket reconnecting",
+  "screenshots": [
+    {"file":"ui-fallback/designer-collaboration-fallback-desktop.png","role":"designer","route":"/designer/work/c1b2c3d4-1000-4000-8000-000000000003","viewport":"1440x900","state":"reconnecting fallback"},
+    {"file":"ui-fallback/designer-collaboration-fallback-mobile.png","role":"designer","route":"/designer/work/c1b2c3d4-1000-4000-8000-000000000003","viewport":"390x844","state":"reconnecting fallback"},
+    {"file":"ui-fallback/customer-collaboration-fallback-desktop.png","role":"customer","route":"/customer (selected synthetic enquiry)","viewport":"1440x900","state":"reconnecting fallback"},
+    {"file":"ui-fallback/customer-collaboration-fallback-mobile.png","role":"customer","route":"/customer (selected synthetic enquiry)","viewport":"390x844","state":"reconnecting fallback"}
+  ],
+  "inspection": "All four images visually inspected; no clipping, overlap, or horizontal overflow observed in the captured viewport. Mobile title and status text wrap cleanly. Captures do not demonstrate remote participant presence or cursor synchronization."
+}

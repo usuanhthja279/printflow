@@ -33,4 +33,10 @@ button.overview-stat:hover{transform:translateY(-3px);box-shadow:var(--shadow)}d
 .pdf-page-stage .pdf-page-canvas{display:block;position:relative;border:0;padding:0;background:#fff;cursor:crosshair;line-height:0;max-width:none}
 .pdf-page-stage .pdf-page-canvas canvas{display:block}
 .pdf-page-stage .pdf-page-canvas:focus-visible{outline:3px solid #298e8c;outline-offset:3px}
+.collaboration-status{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.5rem auto 1rem;padding:.55rem .8rem;border:1px solid #d5e1e5;border-radius:999px;background:#fff;color:#476273;font-size:.82rem}
+.collaboration-status-dot{width:.55rem;height:.55rem;border-radius:50%;background:#8d9da5;flex:none}.collaboration-connected{background:#269b78;box-shadow:0 0 0 3px #e4f4ef}.collaboration-reconnecting{background:#d99135}.collaboration-revoked,.collaboration-unavailable{background:#bd4f4f}.presence-pill{border-left:1px solid #d5e1e5;padding-left:.55rem;color:#153443;font-weight:700}
+.proof-remote-cursor{position:absolute;z-index:3;width:1rem;height:1rem;border:2px solid #fff;border-radius:50% 50% 50% 0;background:#e56c40;box-shadow:0 1px 5px #17334280;transform:translate(-15%,-15%);pointer-events:none}
+.proof-remote-cursor>span{position:absolute;left:.8rem;top:.25rem;white-space:nowrap;border-radius:.4rem;background:#173342;color:#fff;padding:.18rem .45rem;font:600 .72rem/1.2 system-ui;box-shadow:0 1px 4px #17334255}
+.proof-live-update{margin:1rem 0;padding:1rem;border:1px solid #e9bd77;border-radius:.8rem;background:#fff8e9;color:#503b1f}.proof-live-update p{margin:.4rem 0 .75rem}
+@media(prefers-reduced-motion:reduce){.proof-remote-cursor{transition:none!important;animation:none!important}}
 .pdf-page-annotation-layer .pending{pointer-events:none}
