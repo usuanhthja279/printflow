@@ -1,5 +1,9 @@
 # Screen inventory — customer, business, operator, vendor
 
+## Batch 6B interactive design editor
+
+Customer and assigned-designer workspaces reuse the secured print editor at desktop and phone sizes. The editor adds a page rail, page naming/order/duplicate/delete, per-page dimensions and print guides, optional facing-page preview, saved-draft prepress findings, and locally generated suggestions with preview/apply/dismiss. Designer-only proof export remains separate from customer draft editing. The preflight report is advisory and never signifies proof approval or production release. Desktop/mobile synthetic visual evidence and limitations: [Batch 6B report](WORKFLOW_REDESIGN_BATCH6B.md).
+
 ## Workflow redesign Batch 5 public and inbox screens
 
 The public homepage and product listing now render enabled catalogue entries from the backend, with configured-only WhatsApp contact actions. `/products/{code}` displays current configured options and identifies its artwork as illustrative. `/request-quote` is a four-step product → specifications → artwork/contact → review flow; unspecified choices remain unknown, final pricing is described as staff-provided, and privacy acceptance is separate from unchecked WhatsApp consent. Enquiry success keeps retryable artwork attachment and secure tracking details. Desktop/mobile screenshots are recorded under `output/batch5-visual-evidence/`; mocked browser states are marked synthetic.

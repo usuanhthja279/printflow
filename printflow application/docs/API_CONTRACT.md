@@ -180,6 +180,14 @@ Inline PNG/JPEG previews additionally inspect dimensions without decoding pixels
 
 All staff mutations require session/CSRF, current enabled role, enquiry assignment/claim and owner MFA where applicable. Customer reads require linkage; inaccessible records return 404. Existing contracts below remain unless explicitly superseded here.
 
+## Batch 6B versioned design editor and prepress
+
+`GET/PUT /api/v1/design/enquiries/{id}/editor-draft` continues to enforce project, role and workflow-stage authorization and optimistic `expectedRevision`. V2 documents persist an ordered `pages` array and `activePageId`; V1 remains accepted and converts to one V2 page without altering existing layer IDs. Page count is at most 100, layers at most 100 per page/500 total, with per-page trim, bleed and safe-margin geometry. `POST .../editor-export` renders every page using only verified clean same-project image assets and still requires the expected draft/proof revisions; publication remains the existing immutable proof endpoint.
+
+`POST /api/v1/design/enquiries/{id}/editor-preflight` accepts `{expectedDraftRevision}` and records a report bound to project, draft revision, SHA-256, ruleset and requester. `GET .../preflight-reports` returns scoped report history. Owner/assigned-designer `POST .../preflight-reports/{report}/acknowledge` records a note, not approval. Reports expose `isProductionApproval:false`; workflow gates do not consume preflight acknowledgement.
+
+`POST /api/v1/design/enquiries/{id}/editor-assistant/suggestions` accepts `{expectedDraftRevision}`. Current provider is deterministic local-only and returns `externalCallsEnabled:false`; no customer document is sent to a remote AI service. See [Batch 6B implementation and verification](WORKFLOW_REDESIGN_BATCH6B.md).
+
 - `GET/PUT /api/v1/staff/enquiries/{id}/quote-draft`: private partial draft. PUT `{expectedRevision,payload}` (maximum serialized payload 30,000 characters), conflict on a stale revision. Draft changes do not issue an offer.
 - Quote issue additionally accepts up to 30 `lines`: `{description,quantity,unitPaise,taxBps,specifications}`. Tax is an explicitly entered percentage in basis points, with half-up rounding per line to paise. `totalPaise` must exactly match the computed sum; a missing line list retains all-inclusive compatibility. Controlled specification keys are validated against the configured print vocabulary.
 - `GET /api/public/print-vocabulary`, `GET /api/v1/owner/print-vocabulary`; owner `PUT .../{category}` with `{expectedRevision,choices}` retains UNSURE, unique uppercase option codes and immutable configuration audit. Existing snapshots are unaffected.

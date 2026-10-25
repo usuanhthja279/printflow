@@ -30,6 +30,39 @@ class PrintDesignPdfTest {
         }
     }
 
+    @Test void v1DraftConvertsDeterministicallyAndV2ExportsPageOrderAndPageSizes() throws Exception {
+        var layer=text("heading","Page one",8,8);
+        var legacy=new PrintDesign.Document(1,"BLANK",90,54,3,5,List.of(layer));
+        var converted=legacy.asV2();
+        assertEquals(2,converted.schemaVersion());
+        assertEquals("page-1",converted.pages().getFirst().id());
+        assertEquals(List.of(layer),converted.pages().getFirst().elements());
+        var second=new PrintDesign.Page("inside","Inside",148,210,2,6,List.of(text("inside-title","Inside cover",10,12)));
+        var multi=PrintDesign.Document.v2("BOOK_COVER",List.of(converted.pages().getFirst(),second),"inside");
+        byte[] bytes=exporter.create(multi,id->null);
+        try(var pdf=Loader.loadPDF(bytes)){
+            assertEquals(2,pdf.getNumberOfPages());
+            assertEquals((90+6)*72f/25.4f,pdf.getPage(0).getMediaBox().getWidth(),.02f);
+            assertEquals((148+4)*72f/25.4f,pdf.getPage(1).getMediaBox().getWidth(),.02f);
+            assertEquals((148+4)*72f/25.4f,pdf.getPage(1).getBleedBox().getWidth(),.02f);
+            assertTrue(new PDFTextStripper().getText(pdf).contains("Inside cover"));
+        }
+    }
+
+    @Test void rejectsMultipageDocumentsOverServerPageLimit() {
+        var pages=java.util.stream.IntStream.range(0,101).mapToObj(i->new PrintDesign.Page("p"+i,"Page",90,54,3,5,List.of())).toList();
+        var tooMany=PrintDesign.Document.v2("BLANK",pages,"p0");
+        assertThrows(IllegalArgumentException.class,()->exporter.create(tooMany,id->null));
+    }
+    @Test void imageFitCalculationsPreserveContainAndCenterCropCoverGeometry() {
+        var contain=PrintDesignPdf.imageFit(100,100,1600,800,"CONTAIN");
+        assertEquals(100,contain.width(),.01f);assertEquals(50,contain.height(),.01f);
+        assertEquals(0,contain.x(),.01f);assertEquals(25,contain.y(),.01f);
+        var cover=PrintDesignPdf.imageFit(100,100,1600,800,"COVER");
+        assertEquals(200,cover.width(),.01f);assertEquals(100,cover.height(),.01f);
+        assertEquals(-50,cover.x(),.01f);assertEquals(0,cover.y(),.01f);
+        assertThrows(IllegalArgumentException.class,()->PrintDesignPdf.imageFit(100,100,1,1,"INVALID"));
+    }
     @Test void embedsOnlyResolvedImageLayersAndRejectsInvalidLayerReferences() throws Exception {
         UUID asset=UUID.randomUUID();var image=new BufferedImage(8,8,BufferedImage.TYPE_INT_RGB);
         image.setRGB(2,2,0xff33aa77);var bytes=new ByteArrayOutputStream();ImageIO.write(image,"png",bytes);

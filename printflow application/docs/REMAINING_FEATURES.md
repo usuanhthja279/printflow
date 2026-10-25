@@ -37,15 +37,9 @@ Automatic designer allocation with owner availability/manual overrides is implem
 
 The Batch 6A editor foundation is implemented on `feature/workflow-redesign-batch6a`: structured private drafts, customer/assigned-designer authorization, mm canvas with bleed and safe guides, text and basic shapes, scanned project image layers, layer operations, zoom/pan, undo/redo, optimistic revision conflicts, shared-font PDF export, raster-position comparison and immutable proof publishing. The safe-margin control enforces the backend's 50 mm ceiling and canvas geometry. See [WORKFLOW_REDESIGN_BATCH6A.md](WORKFLOW_REDESIGN_BATCH6A.md).
 
-### Batch 6B — AI Design and Prepress (separate development branch)
+### Batch 6B — Advanced design and professional prepress
 
-Prepare and implement this work only on `feature/workflow-redesign-batch6b`, based on the completed Batch 6A branch. Scope requires a separate approved implementation brief. Backlog candidates:
-
-- Human-reviewed AI-assisted layout and copy suggestions, with customer artwork and business data protected by explicit authorization and no automatic proof approval or production release.
-- Multipage design documents, spreads, page ordering and reusable templates.
-- Font selection/styles, complex-script layout, font licensing and embedding policy, PDF artwork import/rasterization and image crop/fitting controls.
-- Prepress checks for trim/bleed/safe areas, resolution, missing or unsupported glyphs, color spaces, spot colors, ICC profiles, PDF/X output, trapping and imposition.
-- Reproducible preflight reports and clear human sign-off; preserve the existing immutable proof hash and reapproval gates.
+Implementation is in progress on isolated branch `feature/workflow-redesign-batch6b`; see [WORKFLOW_REDESIGN_BATCH6B.md](WORKFLOW_REDESIGN_BATCH6B.md) for exact tested scope and gaps. Multipage V2 documents, PDF export, page geometry, embedded Liberation Sans Regular, image fit/opacity/replacement, advisory project/hash-bound preflight reports and a deterministic local suggestion provider are implemented. External generative AI, PDF import, complex-script shaping, licensed font/style catalogs, ICC/CMYK, spot colors, trapping, PDF/X certification and imposition remain pending. Do not treat advisory reports as print approval or alter proof/production gates.
 
 ### Implementation-freeze visual acceptance gate
 

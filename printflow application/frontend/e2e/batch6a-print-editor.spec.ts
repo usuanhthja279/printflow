@@ -3,7 +3,7 @@ import {mkdirSync,readFileSync} from 'node:fs';
 import path from 'node:path';
 
 const id='ab6a0000-0000-4000-8000-000000000001';
-const evidence=path.resolve('..','output','batch6a-visual-evidence');
+const evidence=path.resolve('..','output','batch6b-visual-evidence');
 const png=readFileSync(path.resolve('e2e','fixtures','proof-v1.png'));
 const printFont=readFileSync(path.resolve('node_modules/pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf'));
 const pdfjsModule=readFileSync(path.resolve('node_modules/pdfjs-dist/build/pdf.mjs'),'utf8');
@@ -15,8 +15,8 @@ const blank={schemaVersion:1 as const,templateId:'A4_FLYER',widthMm:210,heightMm
 ]};
 
 test('print editor supports templates, canvas layers, ordering, undo/redo, save conflict and proof publishing',async({page},testInfo)=>{
- test.setTimeout(90000);page.setDefaultTimeout(10000);await page.setViewportSize(testInfo.project.name==='mobile'?{width:390,height:844}:{width:1440,height:900});
- let draft:{revision:number;document:{schemaVersion:1;templateId:string;widthMm:number;heightMm:number;bleedMm:number;safeMarginMm:number;elements:unknown[]};updatedAt:string|null}={revision:0,document:blank,updatedAt:null},conflictOnce=false,published=0,exported=0;
+ test.setTimeout(90000);page.setDefaultTimeout(10000);page.setDefaultNavigationTimeout(30000);await page.setViewportSize(testInfo.project.name==='mobile'?{width:390,height:844}:{width:1440,height:900});
+ let draft:{revision:number;document:{schemaVersion:number;templateId:string;widthMm:number;heightMm:number;bleedMm:number;safeMarginMm:number;elements:unknown[];pages?:{id:string;name:string;elements:unknown[]}[];activePageId?:string};updatedAt:string|null}={revision:0,document:blank,updatedAt:null},conflictOnce=false,published=0,exported=0;
  await page.route('**/api/**',async route=>{
   const req=route.request(),url=new URL(req.url()),p=url.pathname;let body:unknown={};
   if(p==='/api/v1/design/editor-font'){await route.fulfill({status:200,contentType:'font/ttf',body:printFont});return;}
@@ -30,6 +30,7 @@ test('print editor supports templates, canvas layers, ordering, undo/redo, save 
    const input=req.postDataJSON();if(conflictOnce){conflictOnce=false;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({message:'stale revision'})});return;}
    expect(input.expectedRevision).toBe(draft.revision);expect(input.document.safeMarginMm).toBeLessThanOrEqual(50);draft={revision:draft.revision+1,document:input.document,updatedAt:new Date().toISOString()};body=draft;
   }
+  else if(p==='/api/v1/design/enquiries/'+id+'/editor-assistant/suggestions'&&req.method()==='POST')body={provider:'LOCAL SUGGESTION',externalCallsEnabled:false,draftRevision:draft.revision,suggestions:[{id:'center-front-title',provider:'LOCAL SUGGESTION',title:'Center this text block',rationale:'Synthetic deterministic fixture.',pageId:'page-1',layerId:'template-title',field:'xMm',before:'18',after:'46'}]};
   else if(p==='/api/v1/design/enquiries/'+id+'/editor-export'&&req.method()==='POST'){exported++;body={artifact:{id:'design-pdf-'+exported,display_name:'Editor-proof.pdf',kind:'DESIGN',state:'CLEAN',media_type:'application/pdf',byte_size:1200,sha256:'a'.repeat(64)},expectedProofRevision:0,summary:'Generated from editor draft'};}
   else if(p==='/api/v1/design/enquiries/'+id+'/artifacts'&&req.method()==='POST')body={id:'synthetic-image',display_name:'sample.png',kind:'DESIGN',state:'CLEAN',media_type:'image/png',byte_size:png.length,sha256:'b'.repeat(64)};
   else if(p==='/api/v1/design/enquiries/'+id+'/proofs'&&req.method()==='POST'){published++;body={};}
@@ -75,19 +76,19 @@ test('print editor supports templates, canvas layers, ordering, undo/redo, save 
  await editor.getByLabel('Width (mm)').fill('90');await editor.getByLabel('Height (mm)').fill('54');await expect(editor.getByRole('img',{name:/Print canvas 90 by 54 millimetres/})).toBeVisible();
  await editor.getByLabel('Starter layout').selectOption('A4_FLYER');await expect(editor.getByRole('img',{name:/Print canvas 210 by 297 millimetres/})).toBeVisible();
  await test.step('A4 safe-margin input clamps to the backend 50 mm maximum',async()=>{const safe=editor.getByLabel('Safe margin');await safe.fill('75');await expect(safe).toHaveValue('50');});
- await editor.getByRole('button',{name:'Add text'}).click();await editor.getByRole('button',{name:'Add image'}).click();await editor.locator('input[type=file]').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});await expect(editor.locator('svg image')).toHaveCount(1);
- await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 1');expect(draft.revision).toBe(1);expect(draft.document.safeMarginMm).toBe(50);
+ await editor.getByRole('button',{name:'Add page'}).click();await editor.getByLabel('Page name').fill('Inside cover');await editor.getByRole('button',{name:'Add text'}).click();expect(await editor.locator('.print-editor-page-thumb').count()).toBe(2);await editor.getByRole('button',{name:/1\. Page 1/}).click();await expect(editor.locator('.print-editor-layer-list li')).toHaveCount(2);await editor.getByRole('button',{name:'Duplicate'}).click();expect(await editor.locator('.print-editor-page-thumb').count()).toBe(3);await editor.getByRole('button',{name:'Delete'}).click();await expect(editor.locator('.print-editor-page-thumb')).toHaveCount(2);await editor.getByRole('button',{name:'Add image'}).click();await editor.locator('input[type=file]').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});await expect(editor.locator('svg image')).toHaveCount(1);await editor.getByLabel('Image fit').selectOption('COVER');await expect(editor.locator('svg image')).toHaveAttribute('preserveAspectRatio','xMidYMid slice');
+ await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 1');expect(draft.revision).toBe(1);expect(draft.document.safeMarginMm).toBe(50);expect(draft.document.schemaVersion).toBe(2);expect(draft.document.pages).toHaveLength(2);expect(draft.document.pages?.[1]?.name).toBe('Inside cover');expect(draft.document.pages?.[1]?.elements).toHaveLength(2);
  await editor.getByRole('button',{name:'Export and share proof'}).click();await expect.poll(()=>published).toBe(1);await expect.poll(()=>exported).toBe(1);
  await editor.getByRole('button',{name:'Add text'}).click();
  await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 2');
  conflictOnce=true;await editor.getByRole('button',{name:'Add text'}).click();await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('alert')).toContainText('Another session saved this design first');
- await editor.getByRole('button',{name:'Reload latest draft'}).click();await expect(editor.getByRole('img',{name:/Print canvas 210 by 297 millimetres/})).toBeVisible();
+ await editor.getByRole('button',{name:'Reload latest draft'}).click();await expect(editor.getByRole('img',{name:/Print canvas 210 by 297 millimetres/})).toBeVisible();await editor.getByRole('button',{name:'Suggest improvements'}).click();await expect(editor.getByText(/LOCAL SUGGESTION · based on saved draft/)).toBeVisible();await editor.getByRole('button',{name:'Preview',exact:true}).click();await editor.getByRole('button',{name:'Apply',exact:true}).click();await expect(editor.getByLabel('X (mm)')).toHaveValue('46');await editor.getByRole('button',{name:'Undo'}).click();await expect(editor.getByLabel('X (mm)')).toHaveValue('18');
  const box=await editor.boundingBox();if(box)await page.evaluate(y=>window.scrollTo({top:Math.max(0,y+window.scrollY-90),behavior:'instant'}),box.y);await page.screenshot({path:path.join(evidence,`designer-editor-${testInfo.project.name}.png`),fullPage:false});
  if(testInfo.project.name==='mobile')expect(await page.locator('body').evaluate(el=>el.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
 test('customer can save a private artwork draft but cannot publish designer proofs',async({page},testInfo)=>{
- page.setDefaultTimeout(10000);await page.setViewportSize(testInfo.project.name==='mobile'?{width:390,height:844}:{width:1440,height:900});let draft:{revision:number;document:{schemaVersion:1;templateId:string;widthMm:number;heightMm:number;bleedMm:number;safeMarginMm:number;elements:unknown[]};updatedAt:string|null}={revision:0,document:blank,updatedAt:null};
+ page.setDefaultTimeout(10000);await page.setViewportSize(testInfo.project.name==='mobile'?{width:390,height:844}:{width:1440,height:900});let draft:{revision:number;document:{schemaVersion:number;templateId:string;widthMm:number;heightMm:number;bleedMm:number;safeMarginMm:number;elements:unknown[];pages?:{id:string;name:string;elements:unknown[]}[];activePageId?:string};updatedAt:string|null}={revision:0,document:blank,updatedAt:null};
  await page.route('**/api/**',async route=>{const req=route.request(),p=new URL(req.url()).pathname;let body:unknown={};
   if(p==='/api/v1/design/editor-font'){await route.fulfill({status:200,contentType:'font/ttf',body:printFont});return;}
   else if(p==='/api/v1/auth/session')body={id:'synthetic-customer',username:'customer@example.test',role:'CUSTOMER',mustChangePassword:false,mfaEnrolled:true,mfaRequired:false,mfaRecent:true};
