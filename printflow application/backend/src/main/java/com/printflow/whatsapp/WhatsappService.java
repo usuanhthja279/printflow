@@ -73,7 +73,9 @@ public class WhatsappService {
             db.update("insert into whatsapp_contact_consents(id,conversation_id,purpose,channel,consent_version,granted,granted_at,withdrawn_at) values(?,?,'SERVICE_UPDATES','WHATSAPP','1.0',false,now(),now())",UUID.randomUUID(),id);
             queue(id,"You are unsubscribed from business-initiated WhatsApp updates. You can still message us whenever you need help.",true);return;
         }
-        if("HANDOFF".equals(control))return;
+        // The persisted handoff_status is HUMAN; bot_state may also be HANDOFF.
+        // Respect either marker so a conversation handed to staff never gets bot replies.
+        if("HUMAN".equals(control)||"HANDOFF".equals(state))return;
         if(Set.of("HELP","MENU").contains(upper)){db.update("update whatsapp_conversations set bot_state='MENU',state_data='{}'::jsonb where id=?",id);queue(id,greeting(),false);return;}
         if("START".equals(upper)&&"AWAITING_CONSENT".equals(state)){
             db.update("insert into whatsapp_contact_consents(id,conversation_id,purpose,channel,consent_version,granted,granted_at) values(?,?,'SERVICE_UPDATES','WHATSAPP','1.0',true,now())",UUID.randomUUID(),id);
@@ -107,7 +109,28 @@ public class WhatsappService {
         db.update("insert into whatsapp_messages(id,conversation_id,idempotency_key,direction,message_type,body_ciphertext,delivery_status,next_attempt_at) values(?,?,?,'OUTBOUND',?,?, 'QUEUED',now()) on conflict(idempotency_key) do nothing",UUID.randomUUID(),conversation,"out:"+UUID.randomUUID(),operationalAck?"OPT_OUT_ACK":"text",cipher.encrypt(body));db.update("update whatsapp_conversations set last_outbound_at=now(),updated_at=now() where id=?",conversation);
     }
 
-    private void status(String providerMessageId,String rawStatus,long at,String error){if(!Set.of("sent","delivered","read","failed").contains(rawStatus))return;String next=switch(rawStatus){case "sent"->"SENT";case "delivered"->"DELIVERED";case "read"->"READ";default->"FAILED";};String eventId="status:"+providerMessageId+":"+rawStatus+":"+at;if(!recordEvent(eventId,sha256(eventId),"STATUS"))return;db.update("update whatsapp_messages set delivery_status=?,provider_status_at=to_timestamp(?),provider_error_code=? where provider_message_id=? and (provider_status_at is null or provider_status_at<to_timestamp(?) or (provider_status_at=to_timestamp(?) and (case delivery_status when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end)<(case ? when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end)))",next,at,error,providerMessageId,at,at,next);}
+    private void status(String providerMessageId,String rawStatus,long at,String error){
+        if(!Set.of("sent","delivered","read","failed").contains(rawStatus))return;
+        String next=deliveryState(rawStatus);
+        db.update("insert into whatsapp_provider_status_events(id,provider_message_id,status,provider_status_at,provider_error_code) values(?,?,?,?,?) on conflict(provider_message_id,status,provider_status_at) do nothing",UUID.randomUUID(),providerMessageId,next,java.sql.Timestamp.from(Instant.ofEpochSecond(at)),error);
+        applyPendingStatuses(providerMessageId);
+    }
+    private void applyPendingStatuses(String providerMessageId){
+        if(!Boolean.TRUE.equals(db.queryForObject("select exists(select 1 from whatsapp_messages where provider_message_id=? and direction='OUTBOUND')",Boolean.class,providerMessageId)))return;
+        var pending=db.query("select id,status,provider_status_at,provider_error_code from whatsapp_provider_status_events where provider_message_id=? and applied_at is null order by provider_status_at,status",(rs,n)->new ProviderStatus(rs.getObject("id",UUID.class),rs.getString("status"),rs.getTimestamp("provider_status_at").toInstant(),rs.getString("provider_error_code")),providerMessageId);
+        for(var event:pending){
+            var eventTime=java.sql.Timestamp.from(event.at());
+            db.update("update whatsapp_messages set delivery_status=?,provider_status_at=?,provider_error_code=? where provider_message_id=? and ((case ? when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end)>(case delivery_status when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end) or ((case ? when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end)=(case delivery_status when 'SENT' then 1 when 'DELIVERED' then 2 when 'READ' then 3 when 'FAILED' then 4 else 0 end) and (provider_status_at is null or provider_status_at<?)))",event.status(),eventTime,event.error(),providerMessageId,event.status(),event.status(),eventTime);
+            db.update("update whatsapp_provider_status_events set applied_at=now() where id=? and applied_at is null",event.id());
+        }
+    }
+    private record ProviderStatus(UUID id,String status,Instant at,String error){}
+    private static String deliveryState(String rawStatus){return switch(rawStatus){case "sent"->"SENT";case "delivered"->"DELIVERED";case "read"->"READ";default->"FAILED";};}
+    @Transactional public void recordProviderAccepted(UUID messageId,String providerMessageId){
+        if(providerMessageId==null||providerMessageId.isBlank()||providerMessageId.length()>220)throw new IllegalArgumentException("Invalid provider message id");
+        db.update("update whatsapp_messages set provider_message_id=?,delivery_status='SENT',provider_status_at=coalesce(provider_status_at,now()),provider_error_code=null,next_attempt_at=null,sending_started_at=null where id=? and direction='OUTBOUND' and delivery_status in ('SENDING','UNKNOWN')",providerMessageId,messageId);
+        applyPendingStatuses(providerMessageId);
+    }
     private boolean recordEvent(String id,String hash,String type){return db.update("insert into whatsapp_events(id,provider_event_id,event_hash,event_type,state,processed_at) values(?,?,?,?, 'PROCESSED',now()) on conflict(provider_event_id) do nothing",UUID.randomUUID(),id,hash,type)==1;}
     private Map<String,Object> readData(Object raw){try{return json.readValue(raw.toString(),new TypeReference<Map<String,Object>>(){});}catch(Exception e){return new LinkedHashMap<>();}}
     private String json(Map<String,Object> data){try{return json.writeValueAsString(data);}catch(Exception e){throw new IllegalStateException("Could not save conversation state");}}

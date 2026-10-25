@@ -109,3 +109,50 @@ The isolated preview ran the generated `frontend/.next-batch5/standalone/server.
 - At 390px the wizard and inbox stack into a single column and the tests report no horizontal overflow. Consent copy and long customer messages wrap; lower conversation/simulator content requires vertical scrolling as expected.
 - WhatsApp implementation is **not provider-configured or live-verified**. There are no Meta business assets, public HTTPS webhook or approved templates configured. Outbound remains disabled and the local simulator does not send provider messages. Free-form replies outside the service window remain blocked; approved-template sending is deferred.
 - Gmail mailbox synchronization, campaigns, payment links/reminders and WhatsApp order-status disclosure remain deferred. The existing REST workflow and permissions remain the source of truth for enquiries, quotations and orders.
+
+## Local E1 acceptance correction — 2026-10-25
+
+### Corrections
+
+- Fixed bot takeover handling so either persisted `handoff_status=HUMAN` or `bot_state=HANDOFF` prevents automated menu/greeting replies. STOP remains handled before this guard, and the existing assigned-sales authorization is still required to reply or resume bot control.
+- Added a provider-status event ledger for signed callbacks that arrive before a provider message ID has been attached. Events are applied after acceptance is recorded, and status precedence prevents a late SENT update from downgrading DELIVERED/READ.
+- Added bounded recovery for interrupted sends: `SENDING` rows older than two minutes become `UNKNOWN` and are not resent automatically. Ambiguous provider failures and 5xx responses also remain `UNKNOWN`; only an explicit rate-limit response uses the bounded retry path. This avoids blind duplicate delivery when acceptance is uncertain.
+- Added migration `V28__whatsapp_outbox_crash_and_status_recovery.sql` for send-start timestamps and unapplied provider callbacks.
+
+### E1 results
+
+| Check | Result |
+|---|---|
+| Native PostgreSQL integration (`StaffScopeIntegrationTest`) | **Passed: 12 tests, 0 failures, 0 errors** against the project-local PostgreSQL 17.11 database on `127.0.0.1:5432`. This includes menu then human handoff, inbound persistence without bot reply, assigned staff reply, return to bot, STOP while staff-controlled, duplicate signed webhook delivery, outbox crash recovery and early delivered-status callback. |
+| Synthetic real-backend quote | **Passed** via the running Spring HTTP API against native PostgreSQL. The test verifies one saved enquiry, privacy and separate WhatsApp consent, same-key idempotent replay, changed-payload conflict, invalid artwork rejection followed by successful artwork retry, and no duplicate enquiry. The clean scanned artifact and synthetic enquiry are retained in the ignored local test database as evidence; their contact data uses `example.test` and is not a real customer. |
+| WhatsApp focused security unit tests | **Passed**: `MetaWebhookSignatureTest`, `WhatsappOutboundPolicyTest`, `WhatsappSettingsTest`. |
+| Frontend typecheck | **Passed**: `npm.cmd run typecheck`. |
+| Next.js production build | **Passed**: `PRINTFLOW_NEXT_DIST_DIR=.next-e1 npm.cmd run build` (PowerShell process environment). Build output was isolated to avoid the running default standalone directory. |
+| Focused desktop/mobile Playwright | **Passed: 4 tests** (2 desktop, 2 mobile) against the isolated production preview on port 3001: public quote flow/idempotent UI retry/artwork retry and WhatsApp inbox handoff/reply/resume/opt-out. These UI cases use synthetic API fixtures; the real-backend quote acceptance is separately covered by the PostgreSQL integration test above. |
+| Live Meta WhatsApp | **Not run by design.** `WHATSAPP_ENABLED` remains false; no provider send, deployment, merge or live configuration was performed. |
+
+### Exact verification commands
+
+From `backend`, the integration run loaded ignored local `.env` values into process variables, mapped `POSTGRES_DB/USER/PASSWORD` to Spring `DB_URL/DB_USERNAME/DB_PASSWORD`, and started PostgreSQL using the checked-in script before invoking Gradle in the same managed session:
+
+```powershell
+& '..\scripts\Initialize-LocalDatabase.ps1'
+# Import ignored ..\.env variables; map POSTGRES_* to DB_* for Spring
+. '..\scripts\Use-PrintFlowTools.ps1'
+.\gradlew.bat --no-daemon integrationTest --tests com.printflow.StaffScopeIntegrationTest --rerun-tasks
+.\gradlew.bat --no-daemon test --tests com.printflow.whatsapp.MetaWebhookSignatureTest --tests com.printflow.whatsapp.WhatsappOutboundPolicyTest --tests com.printflow.whatsapp.WhatsappSettingsTest
+```
+
+From `frontend`:
+
+```powershell
+npm.cmd run typecheck
+$env:PRINTFLOW_NEXT_DIST_DIR='.next-e1'; npm.cmd run build
+$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:3001'; npm.cmd run test:e2e -- e2e/batch5-public-website.spec.ts e2e/batch5-whatsapp-inbox.spec.ts --max-failures=1
+```
+
+Playwright used the standalone output built in `.next-e1` with its static assets and a temporary local preview at port 3001. The checked-in screenshot suite captured desktop `1440×900` and mobile `390×844` views under `output/batch5-visual-evidence/`; these are browser-fixture screenshots, not evidence of real Meta messaging.
+
+### Readiness
+
+**E1 local acceptance: ready for user testing.** Database-backed workflow, safe local outbox recovery, signed webhook handling, production build and focused desktop/mobile UI checks all passed. Live WhatsApp delivery remains deliberately disabled and is outside E1 acceptance; provider credentials/webhook infrastructure and a separately authorized live verification are still required before any production activation.
