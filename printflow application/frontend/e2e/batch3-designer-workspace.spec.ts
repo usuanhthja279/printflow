@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const ids=['a1b2c3d4-1000-4000-8000-000000000001','b1b2c3d4-1000-4000-8000-000000000002','c1b2c3d4-1000-4000-8000-000000000003','d1b2c3d4-1000-4000-8000-000000000004','e1b2c3d4-1000-4000-8000-000000000005','f1b2c3d4-1000-4000-8000-000000000006'];
 const projectId=ids[2],customerId=ids[1],oldFile='a1b2c3d4-2000-4000-8000-000000000001',currentFile='a1b2c3d4-2000-4000-8000-000000000002',oldProof='a1b2c3d4-2000-4000-8000-000000000003',currentProof='a1b2c3d4-2000-4000-8000-000000000004',quoteId='a1b2c3d4-2000-4000-8000-000000000005';
-const now='2026-10-25T09:00:00Z',evidenceRoot=path.resolve('..','output','batch3-visual-evidence','synthetic'),batch3bEvidenceRoot=path.resolve('..','output','batch3b-visual-evidence','ui-fallback');
+const now='2026-10-25T09:00:00Z',evidenceRoot=path.resolve('..','output','batch3-visual-evidence','synthetic'),batch3bEvidenceRoot=path.resolve('..','output','batch3b-visual-evidence','ui-fallback'),batch4EvidenceRoot=path.resolve('..','output','batch4-visual-evidence');
 async function captureViewport(page:Page,name:string){await page.screenshot({path:path.join(evidenceRoot,name),scale:'css'});}
 const image=readFileSync(path.resolve('e2e','fixtures','proof-v1.png'));
 const pdf=readFileSync(path.resolve('e2e','fixtures','proof-pages-v1.pdf'));
@@ -24,6 +24,7 @@ const artifactRows=[{id:oldFile,display_name:oldRevision.display_name,kind:'DESI
 const workspace=(customer=false)=>({artifacts:customer?artifactRows.filter(a=>[oldFile,currentFile].includes(a.id)):artifactRows,proofs:[currentRevision,oldRevision],comments:[currentComment,oldComment],quoteAccepted:true,currentProofApproved:currentRevision.decision==='APPROVE',closed:false,designerId:'synthetic-designer',tasks:[{id:'task-1',title:'Check typography',notes:'Internal task',due_date:'2026-10-28',state:'TODO',revision:1}],referenceFeedback:[],referenceEditable:false,artworkRequested:false,productCode:'WEDDING_CARDS'});
 
 async function installFixtures(page:Page,role:'DESIGNER'|'CUSTOMER'){
+ currentRevision.decision=null;currentRevision.decided_at=null;
  let previewUnavailable=false,decisionAttempts=0;
  await page.route('**/api/**',async route=>{
   const req=route.request(),pathname=new URL(req.url()).pathname;let body:unknown={},status=200;
@@ -101,20 +102,31 @@ test('collaboration replays the selected proof page after reconnect and subscrip
   sockets.push(socket);const frames:string[]=[];framesByConnection.push(frames);
   socket.onMessage(message=>{const wire=String(message);frames.push(wire);if(wire.startsWith('CONNECT\n'))socket.send('CONNECTED\nversion:1.2\nheart-beat:0,0\n\n\u0000');else if(wire.startsWith('SUBSCRIBE\n'))socket.send('MESSAGE\nmessage-id:presence-1\nsubscription:project-'+customerId+'\ncontent-type:application/json\n\n'+JSON.stringify({version:1,eventId:'presence-1',type:'presence.snapshot',projectId:customerId,proofRevisionId:null,at:now,data:{participants:[{participantId:'staff-session-test',label:'J.D.Printex team',role:'SALES',self:false,viewingPage:1,proofRevisionId:currentProof}]}})+'\u0000');});
  });
- await page.goto('/customer',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'View enquiry',exact:true}).click();
+ await page.goto('/customer',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'View enquiry',exact:true}).click();await page.getByRole('button',{name:'Open proof studio'}).click();
  await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
  await expect(page.locator('.presence-pill')).toContainText('J.D.Printex team');
+ const markArtwork=page.getByRole('button',{name:'Mark a change on the proof'});await markArtwork.hover({position:{x:20,y:20}});
  const hasCursorSend=(frames:string[])=>frames.some(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
- await expect.poll(()=>hasCursorSend(framesByConnection[0]||[])).toBe(true);
- await sockets[0].close({code:1001,reason:'synthetic reconnect test'});
+ await expect.poll(()=>hasCursorSend(framesByConnection[framesByConnection.length-1]||[])).toBe(true);
+ const activeSocket=sockets[sockets.length-1];await activeSocket.close({code:1001,reason:'synthetic reconnect test'});
  await expect(page.locator('.collaboration-status')).toContainText('Reconnecting.');await expect(page.locator('.presence-pill')).toHaveCount(0);
  await expect.poll(()=>framesByConnection.length).toBeGreaterThan(1);
  await expect(page.locator('.collaboration-status')).toContainText('Live collaboration connected.');
- await expect.poll(()=>hasCursorSend(framesByConnection[1]||[])).toBe(true);
- const replayFrames=framesByConnection[1],subscribeIndex=replayFrames.findIndex(frame=>frame.startsWith('SUBSCRIBE\n')&&frame.includes('/user/queue/collaboration/'+customerId)),replayIndex=replayFrames.findIndex(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
+ await expect.poll(()=>framesByConnection.length).toBeGreaterThan(1);await expect.poll(()=>hasCursorSend(framesByConnection[framesByConnection.length-1]||[])).toBe(true);
+ const replayFrames=framesByConnection[framesByConnection.length-1],subscribeIndex=replayFrames.findIndex(frame=>frame.startsWith('SUBSCRIBE\n')&&frame.includes('/user/queue/collaboration/'+customerId)),replayIndex=replayFrames.findIndex(frame=>frame.startsWith('SEND\n')&&frame.includes('/app/collaboration/'+customerId+'/cursor'));
  expect(subscribeIndex).toBeGreaterThanOrEqual(0);expect(replayIndex).toBeGreaterThan(subscribeIndex);
  const body=replayFrames[replayIndex].slice(replayFrames[replayIndex].indexOf('\n\n')+2).split('\u0000')[0];
  expect(JSON.parse(body)).toMatchObject({proofRevisionId:currentProof,page:1,hidden:false});
+});
+
+test('revoked collaboration clears presence and remote cursors without retrying',async({page})=>{
+ page.setDefaultTimeout(10000);await installFixtures(page,'CUSTOMER');let connectionCount=0;let socket:import('@playwright/test').WebSocketRoute|undefined;
+ await page.routeWebSocket(/\/collaboration\/ws(?:\?.*)?$/,route=>{connectionCount++;socket=route;route.onMessage(message=>{const wire=String(message);if(wire.startsWith('CONNECT\n'))route.send('CONNECTED\nversion:1.2\nheart-beat:0,0\n\n\u0000');else if(wire.startsWith('SUBSCRIBE\n'))route.send('MESSAGE\nmessage-id:presence-revoked\nsubscription:project-'+customerId+'\ncontent-type:application/json\n\n'+JSON.stringify({version:1,eventId:'presence-revoked',type:'presence.snapshot',projectId:customerId,proofRevisionId:null,at:now,data:{participants:[{participantId:'session-staff',label:'J.D.Printex team',role:'SALES',self:false,viewingPage:1,proofRevisionId:currentProof}]}})+'\u0000');else if(wire.startsWith('SEND\n')&&wire.includes('/cursor'))route.send('MESSAGE\nmessage-id:cursor-revoked\nsubscription:project-'+customerId+'\ncontent-type:application/json\n\n'+JSON.stringify({version:1,eventId:'cursor-revoked',type:'cursor.moved',projectId:customerId,proofRevisionId:currentProof,at:now,data:{participantId:'session-staff',participant:'J.D.Printex team',samePage:true,page:1,x:.4,y:.5}})+'\u0000');});});
+ await page.goto('/customer',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'View enquiry',exact:true}).click();
+ await expect(page.locator('.presence-pill')).toContainText('J.D.Printex team');await page.getByRole('button',{name:'Open proof studio'}).click();const cursorEvent={version:1,eventId:'cursor-revoked',type:'cursor.moved',projectId:customerId,proofRevisionId:currentProof,at:now,data:{participantId:'session-staff',participant:'J.D.Printex team',samePage:true,page:1,x:.4,y:.5}};socket!.send('MESSAGE\nmessage-id:cursor-revoked\nsubscription:project-'+customerId+'\ncontent-type:application/json\n\n'+JSON.stringify(cursorEvent)+'\u0000');await expect(page.locator('.proof-remote-cursor')).toHaveCount(1);const connectionsBeforeRevoke=connectionCount;
+ await socket!.close({code:1008,reason:'project authorization revoked'});
+ await expect(page.locator('.collaboration-status')).toContainText('Project collaboration access ended.');await expect(page.locator('.presence-pill')).toHaveCount(0);await expect(page.locator('.proof-remote-cursor')).toHaveCount(0);const viewport=page.viewportSize();await page.screenshot({path:path.join(batch4EvidenceRoot,'collaboration-revoked-'+(viewport?.width===390?'mobile':'desktop')+'.png')});
+ await page.waitForTimeout(2000);expect(connectionCount).toBe(connectionsBeforeRevoke);
 });
 
 test.beforeAll(()=>{mkdirSync(evidenceRoot,{recursive:true});mkdirSync(batch3bEvidenceRoot,{recursive:true});});

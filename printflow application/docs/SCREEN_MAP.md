@@ -1,5 +1,9 @@
 # Screen inventory — customer, business, operator, vendor
 
+## Batch 4 finance and fulfilment workspace (25 October 2026)
+
+The live customer work page now presents quotation-linked finance, verified ledger totals, invoice history and the next finance action beside the ordered quotation → design → payment → production → delivery overview. Owner-only finance controls remain in the authorized work context; customers receive read-only finance data. Razorpay remains clearly labelled TEST or unavailable. The production job detail shows the existing owner-derived readiness and an ordered fulfilment timeline through delivery review/completion. Delivery photos use authenticated previews, stage labels, scan status and upload timestamps. The exact API contract is unchanged; server gates remain authoritative. Desktop/mobile evidence and limitations are recorded in `WORKFLOW_REDESIGN_BATCH4.md` and `output/batch4-visual-evidence/`.
+
 ## Implemented screens — foundation and first staff slice
 
 23 October 2026: customer pages now use J.D.Printex branding and owner-confirmed service categories. Homepage service links pass `?product=CODE` to `/request-quote`; known codes preselect the enquiry product. Unknown codes retain the default. Paper weight and size default to unspecified rather than assuming brochure stock. The existing local-only boundary remains.

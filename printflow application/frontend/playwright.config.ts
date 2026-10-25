@@ -5,6 +5,6 @@ export default defineConfig({
  use:{baseURL:process.env.PLAYWRIGHT_BASE_URL||'http://127.0.0.1:3000',
   browserName:'chromium', channel:process.env.PLAYWRIGHT_CHANNEL||'msedge',
   trace:'off', screenshot:'only-on-failure'},
- projects:[{name:'desktop',use:{viewport:{width:1366,height:900}}},
-  {name:'mobile',use:{...devices['iPhone 13'],defaultBrowserType:'chromium'}}],
+ projects:[{name:'desktop',use:{viewport:{width:1440,height:900}}},
+  {name:'mobile',use:{...devices['iPhone 13'],viewport:{width:390,height:844},deviceScaleFactor:1,defaultBrowserType:'chromium'}}],
 });

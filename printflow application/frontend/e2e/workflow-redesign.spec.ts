@@ -4,6 +4,8 @@ import type {CustomerWorkflow} from '../src/components/WorkflowUI';
 // UI boundary fixtures only. Every API request is intercepted; no real mail,
 // customer mutations or provider calls are performed by these tests.
 const id='11111111-2222-4333-8444-555555555555',artifact='art-1';
+const evidenceDir=path.resolve(process.cwd(),'../output/batch4-visual-evidence');
+async function captureEvidence(page:Page,name:string){await page.screenshot({path:path.join(evidenceDir,name),fullPage:false});}
 const work={id,publicId:id,productCode:'WEDDING_CARDS',quantity:500,status:'IN_PROGRESS',liveWork:true,closureMessage:null,stages:{quotation:'Accepted',design:'Customer proof review',payment:'Advance payment due',production:'Not released',delivery:'Not started'},designer:'Sample designer',contact:{email:'',phone:''},mailConnected:false,emails:[{id:'mail-1',kind:'REVIEW',subject:'Your artwork is ready to review',state:'HELD',thread_phase:'WORK',created_at:'2026-10-24T10:00:00Z'}],logs:[{kind:'REQUEST',message:'Enquiry received',created_at:'2026-10-24T09:00:00Z'}],messages:[{id:'m1',author_role:'TEAM',channel:'PORTAL',body:'Please review both pages of your invitation.',created_at:'2026-10-24T10:00:00Z'}]};
 const finance={quoteId:'quote-1',quoteVersion:1,totalPaise:200000,paidPaise:0,balancePaise:200000,overpaidPaise:0,stage:'Advance payment due',policy:{revision:1,advance_paise:100000,credit_due:null,reason:'Half advance; remaining balance before dispatch.'},policyCurrent:true,owner:false,customer:true,closed:false,released:false,receipts:[],invoices:[]};
 type Options={role?:string;scan?:string;unpaid?:boolean;delivery?:boolean;noPhotos?:boolean;workState?:string};
@@ -57,7 +59,7 @@ test('project next action, conversation and proof studio preserve page review an
  await expect(page.getByRole('region',{name:'Your next action',exact:true})).toContainText('Your artwork is ready to review');
  await expect(page.getByRole('list',{name:'Project stages'}).getByRole('listitem')).toHaveCount(5);
  await expect(page.getByRole('complementary',{name:'Project conversation and email'})).toContainText('Portal');
- await page.screenshot({path:info.outputPath('01-customer-project.png'),fullPage:false});
+ await captureEvidence(page,`customer-work-overview-${info.project.name}.png`);
  await page.getByRole('button',{name:'Open proof studio',exact:true}).click();
  const studio=page.getByRole('dialog',{name:'Proof studio — revision 2',exact:true});
  await expect(studio.getByText('Page 1 of 2',{exact:true})).toBeVisible();
@@ -74,11 +76,12 @@ test('project next action, conversation and proof studio preserve page review an
 
 test('failed scan and unpaid finance remain visibly blocked',async({page},info)=>{
  const {requests}=await fixture(page,{scan:'QUARANTINED'});await page.goto('/customer/work/'+id);
- await expect(page.getByRole('region',{name:'Your next action',exact:true})).toContainText('Your artwork is being prepared');
+ await expect(page.getByRole('region',{name:'Your next action',exact:true})).toContainText('Your artwork is being checked');
+ const financePanel=page.getByRole('region',{name:'Payments and invoices',exact:true});await expect(financePanel.locator('.finance-summary')).toContainText('₹2,000.00');await expect(financePanel.locator('.finance-summary')).toContainText('Balance outstanding');await expect(financePanel.getByText('Configure advance and payment rules',{exact:true})).toHaveCount(0);await expect(financePanel.getByRole('button',{name:'Issue invoice',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Finance readiness',exact:true})).toContainText('Required advance verified');
  await expect(page.getByRole('region',{name:'Finance readiness',exact:true}).locator('li').filter({hasText:'Required advance verified'})).toHaveAttribute('data-state','blocked');
  await expect(page.getByRole('button',{name:'Approve proof revision 2',exact:true})).toBeDisabled();
- expect(requests).toHaveLength(0);await page.locator('#work-payments').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('03-finance-readiness.png')});
+ expect(requests).toHaveLength(0);await page.locator('#work-payments').scrollIntoViewIfNeeded();await captureEvidence(page,`customer-finance-readiness-${info.project.name}.png`);
  if(info.project.name==='mobile')await phoneFits(page);
 });
 
@@ -104,14 +107,16 @@ test('printer lane selection, detail drawer, HOLD/RESUME and stale revision feed
 test('delivery scan evidence precedes confirmation and failed dispatch keeps the note',async({page},info)=>{
  const {requests}=await fixture(page,{role:'OWNER',delivery:true});await page.goto('/business');await page.getByRole('button',{name:'PRODUCTION',exact:true}).click();await page.locator('.production-card').click();
  const flow=page.getByRole('region',{name:'Production and delivery',exact:true});
+ const steps=flow.getByRole('list',{name:'Order delivery steps',exact:true});await expect(steps.getByRole('listitem')).toHaveCount(7);await expect(steps.getByText('Dispatch',{exact:true})).toBeVisible();await expect(steps.getByRole('listitem').nth(1)).toHaveAttribute('data-state','current');await expect(steps.getByRole('listitem').nth(2)).toHaveAttribute('data-state','pending');
+ await flow.scrollIntoViewIfNeeded();await captureEvidence(page,`owner-fulfilment-stepper-${info.project.name}.png`);
  await expect(flow.getByRole('region',{name:'Dispatch readiness',exact:true})).toContainText('Scan pending');
  await expect(flow.getByRole('region',{name:'Delivery confirmation readiness',exact:true})).toContainText('After dispatch');
  await expect(flow.getByText('Awaiting successful scan',{exact:true}).first()).toBeVisible();
  const note=flow.getByRole('textbox',{name:/^Customer-visible progress note/});await note.fill('Synthetic dispatch confirmation must remain blocked.');
  await flow.getByRole('checkbox',{name:'I confirm this action reflects the actual work and the note is suitable for the customer.',exact:true}).check();await flow.getByRole('button',{name:'Confirm dispatch',exact:true}).click();
  await expect(flow.getByRole('alert')).toContainText('clean pickup photo');await expect(note).toHaveValue('Synthetic dispatch confirmation must remain blocked.');expect(requests).toHaveLength(1);
- await flow.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('06-delivery-evidence.png')});if(info.project.name==='mobile')await phoneFits(page);
- await flow.getByRole('button',{name:'Retry photo scan',exact:true}).click();await expect(flow.getByText('✓ Scan passed',{exact:true})).toBeVisible();await flow.getByRole('button',{name:/Preview pickup photo:/}).click();const photo=page.getByRole('dialog',{name:'Pickup photo',exact:true});await expect(photo.getByRole('img')).toHaveJSProperty('naturalWidth',160);await photo.screenshot({path:info.outputPath('08-original-photo-preview.png')});await photo.getByRole('button',{name:'Close dialog',exact:true}).click();
+ await flow.scrollIntoViewIfNeeded();await captureEvidence(page,`owner-dispatch-and-delivery-readiness-${info.project.name}.png`);if(info.project.name==='mobile')await phoneFits(page);
+ await flow.getByRole('button',{name:'Retry photo scan',exact:true}).click();await expect(flow.getByText('✓ Scan passed',{exact:true})).toBeVisible();await flow.getByRole('button',{name:/Preview pickup photo:/}).click();const photo=page.getByRole('dialog',{name:'Pickup photo',exact:true});await expect(photo.getByRole('img')).toHaveJSProperty('naturalWidth',160);await captureEvidence(page,`secure-original-photo-preview-${info.project.name}.png`);await photo.getByRole('button',{name:'Close dialog',exact:true}).click();
 });
 
 

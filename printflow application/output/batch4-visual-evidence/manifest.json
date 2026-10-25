@@ -1,0 +1,21 @@
+{
+  "branch": "feature/workflow-redesign-batch4",
+  "baseCommit": "d8b0421b07d0368367c634169852f34ccd863cba",
+  "captureSource": "frontend/e2e/workflow-redesign.spec.ts",
+  "capturedAt": "2026-10-25",
+  "dataClass": "synthetic UI/API fixtures",
+  "screenshots": [
+    {"file":"customer-work-overview-desktop.png","route":"/customer/work/{synthetic-id}","role":"customer","state":"overview / design review available","viewport":"1440x900","significance":"Ordered stages, next action and conversation rail."},
+    {"file":"customer-work-overview-mobile.png","route":"/customer/work/{synthetic-id}","role":"customer","state":"overview / design review available","viewport":"390x844","significance":"Responsive work overview."},
+    {"file":"customer-finance-readiness-desktop.png","route":"/customer/work/{synthetic-id}#work-payments","role":"customer","state":"advance unpaid, current invoice missing","viewport":"1440x900","significance":"Payment agreement and authoritative blockers; owner controls hidden."},
+    {"file":"customer-finance-readiness-mobile.png","route":"/customer/work/{synthetic-id}#work-payments","role":"customer","state":"advance unpaid, current invoice missing","viewport":"390x844","significance":"Stacked readable finance checklist."},
+    {"file":"owner-dispatch-and-delivery-readiness-desktop.png","route":"/business","role":"owner","state":"READY job, pickup scan pending, dispatch rejected","viewport":"1440x900","significance":"Server gate, retained note and rejected action."},
+    {"file":"owner-dispatch-and-delivery-readiness-mobile.png","route":"/business","role":"owner","state":"READY job, pickup scan pending, dispatch rejected","viewport":"390x844","significance":"Mobile dispatch confirmation and evidence gate."},
+    {"file":"owner-fulfilment-stepper-desktop.png","route":"/business","role":"owner","state":"READY job, pickup evidence current","viewport":"1440x900","significance":"Seven ordered production and delivery steps."},
+    {"file":"owner-fulfilment-stepper-mobile.png","route":"/business","role":"owner","state":"READY job, pickup evidence current","viewport":"390x844","significance":"Responsive seven-step workflow in job drawer."},
+    {"file":"secure-original-photo-preview-desktop.png","route":"/business","role":"owner","state":"authenticated synthetic pickup preview","viewport":"1440x900","significance":"Full image aspect ratio, caption and upload-time label."},
+    {"file":"secure-original-photo-preview-mobile.png","route":"/business","role":"owner","state":"authenticated synthetic pickup preview","viewport":"390x844","significance":"Responsive secure photo preview."},
+    {"file":"collaboration-revoked-desktop.png","route":"/designer/work/{synthetic-id}","role":"designer","state":"project access revoked; remote presence and cursor cleared","viewport":"1440x900","significance":"Access revocation regression; synthetic WebSocket event."},
+    {"file":"collaboration-revoked-mobile.png","route":"/designer/work/{synthetic-id}","role":"designer","state":"project access revoked; remote presence and cursor cleared","viewport":"390x844","significance":"Responsive access revocation regression."}
+  ]
+}
