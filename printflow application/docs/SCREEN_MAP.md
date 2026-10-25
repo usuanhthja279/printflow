@@ -1,5 +1,11 @@
 # Screen inventory — customer, business, operator, vendor
 
+## Workflow redesign Batch 5 public and inbox screens
+
+The public homepage and product listing now render enabled catalogue entries from the backend, with configured-only WhatsApp contact actions. `/products/{code}` displays current configured options and identifies its artwork as illustrative. `/request-quote` is a four-step product → specifications → artwork/contact → review flow; unspecified choices remain unknown, final pricing is described as staff-provided, and privacy acceptance is separate from unchecked WhatsApp consent. Enquiry success keeps retryable artwork attachment and secure tracking details. Desktop/mobile screenshots are recorded under `output/batch5-visual-evidence/`; mocked browser states are marked synthetic.
+
+The OWNER/SALES Business workspace includes a WhatsApp inbox tab with recent conversation list, handoff state, encrypted message timeline, message status, claim/reply/resume controls and suppression notice. Only an MFA-verified owner sees the local simulator when enabled. The inbox has no customer/account auto-link and no private order data lookup by phone. Live Meta sending and verified status remain off/unconfirmed by default. See `WORKFLOW_REDESIGN_BATCH5.md` for test and screenshot results.
+
 ## Batch 4 finance and fulfilment workspace (25 October 2026)
 
 The live customer work page now presents quotation-linked finance, verified ledger totals, invoice history and the next finance action beside the ordered quotation → design → payment → production → delivery overview. Owner-only finance controls remain in the authorized work context; customers receive read-only finance data. Razorpay remains clearly labelled TEST or unavailable. The production job detail shows the existing owner-derived readiness and an ordered fulfilment timeline through delivery review/completion. Delivery photos use authenticated previews, stage labels, scan status and upload timestamps. The exact API contract is unchanged; server gates remain authoritative. Desktop/mobile evidence and limitations are recorded in `WORKFLOW_REDESIGN_BATCH4.md` and `output/batch4-visual-evidence/`.

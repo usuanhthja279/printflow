@@ -23,6 +23,7 @@ public class Enquiry {
     @Column(name="print_sides",length=24) public String printSides;
     @Column(length=80) public String finish;
     @Column(length=2000) public String notes;
+    @Column(name="intended_use",length=240) public String intendedUse;
     @Enumerated(EnumType.STRING) @Column(nullable=false,length=24) public EnquiryStatus status;
     @Column(name="created_at",nullable=false) public Instant createdAt;
     @Column(name="updated_at",nullable=false) public Instant updatedAt;

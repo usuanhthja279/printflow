@@ -4,7 +4,7 @@ export type CreatedEnquiry={publicId:string;trackingToken:string;status:string;c
 export type EventView={status:string;at:string};
 export type TrackingView={publicId:string;productCode:string;quantity:number;status:string;createdAt:string;events:EventView[];closureKind?:string|null;closureMessage?:string|null};
 export type DemoEnquiry={id:string;publicId:string;customerName:string;email:string;phone:string;productCode:string;quantity:number;size:string|null;paperGsm:number|null;printSides:string|null;finish:string|null;notes:string|null;status:EnquiryStatus;createdAt:string};
-export type EnquiryInput={customerName:string;email:string;phone:string;productCode:string;quantity:number;size:string;paperGsm:number|null;printSides:string;finish:string;notes:string;requestedDate?:string};
+export type EnquiryInput={customerName:string;email:string;phone:string;productCode:string;quantity:number;size:string;paperGsm:number|null;printSides:string;finish:string;notes:string;requestedDate?:string;intendedUse?:string;whatsappConsent?:boolean};
 
 export class ApiError extends Error {
  constructor(message:string,public readonly status:number){super(message);this.name='ApiError';}

@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig={
   output:'standalone',
+  // Allows a verification build alongside a running local standalone server.
+  distDir:process.env.PRINTFLOW_NEXT_DIST_DIR||'.next',
   // The HTTP rewrite below does not proxy WebSocket upgrades. Local collaboration
   // connects directly to the authenticated Spring endpoint; production must route
   // /collaboration/ws through its same-origin reverse proxy.

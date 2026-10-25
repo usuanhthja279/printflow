@@ -3,9 +3,9 @@ export type StaffSession={id:string;username:string;role:string;mustChangePasswo
 export type Lead={id:string;publicId:string;customerName:string;email:string;phone:string;productCode:string;quantity:number;notes:string|null;status:EnquiryStatus;source:string;priority:'LOW'|'NORMAL'|'HIGH';assignedStaffId:string|null;nextAction:string|null;followUpAt:string|null;revision:number;createdAt:string;requestedDate?:string|null;closureKind?:string|null;closureMessage?:string|null};
 export type LeadActivity={id:string;actorId:string;action:string;details:string;createdAt:string};
 type Csrf={token:string;headerName:string};
-export async function staffMutation<T>(path:string,method:string,body?:unknown):Promise<T>{
+export async function staffMutation<T>(path:string,method:string,body?:unknown,extraHeaders:Record<string,string>={}):Promise<T>{
  const csrf=await api<Csrf>('/v1/auth/csrf');
- const result=await api<T>(path,{method,credentials:'same-origin',headers:{[csrf.headerName]:csrf.token},...(body===undefined?{}:{body:JSON.stringify(body)})});
+ const result=await api<T>(path,{method,credentials:'same-origin',headers:{[csrf.headerName]:csrf.token,...extraHeaders},...(body===undefined?{}:{body:JSON.stringify(body)})});
  if(path.startsWith('/v1/auth/'))window.dispatchEvent(new Event('jdprintex:session'));
  return result;
 }

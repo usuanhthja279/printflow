@@ -20,7 +20,7 @@ public class StaffEnquiryService {
     public enum Source { WEBSITE,WALK_IN,PHONE,EMAIL,WHATSAPP,SOCIAL,REFERRAL,OTHER }
     public enum Priority { LOW,NORMAL,HIGH }
     public record LeadView(UUID id,UUID publicId,String customerName,String email,String phone,
-        String productCode,int quantity,String notes,String status,String source,String priority,
+        String productCode,int quantity,String intendedUse,String notes,String status,String source,String priority,
         UUID assignedStaffId,String nextAction,Instant followUpAt,long revision,Instant createdAt,java.time.LocalDate requestedDate,String closureKind,String closureMessage) {}
     public record FollowUp(@NotNull Long revision,@NotNull Priority priority,
         @Size(max=500) String nextAction,Instant followUpAt) {}
@@ -125,7 +125,7 @@ public class StaffEnquiryService {
     }
     private String safe(String value){return value==null?"(none)":value;}
     private LeadView view(Enquiry e) {
-        return new LeadView(e.id,e.publicId,e.customerName,e.email,e.phone,e.productCode,e.quantity,e.notes,
+        return new LeadView(e.id,e.publicId,e.customerName,e.email,e.phone,e.productCode,e.quantity,e.intendedUse,e.notes,
             e.status.name(),e.source,e.priority,e.assignedStaffId,e.nextAction,e.followUpAt,e.revision,e.createdAt,e.requestedDate,e.closureKind,e.closureMessage);
     }
 }

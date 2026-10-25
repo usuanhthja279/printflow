@@ -35,6 +35,13 @@ if (-not ($taskCustomerLines -match '^APP_MAIL_ENCRYPTION_KEY=')) {
     @('APP_MAIL_ENABLED=false','APP_CUSTOMER_ACCOUNTS_ENABLED=true',('APP_MAIL_ENCRYPTION_KEY='+[Convert]::ToBase64String($taskMailBytes))) | Add-Content $taskStaffEnv
     Write-Host 'Native customer account flows enabled with encrypted local outbox. Real email delivery remains disabled.'
 }
+$taskWhatsappLines=Get-Content $taskStaffEnv
+if (-not ($taskWhatsappLines -match '^APP_WHATSAPP_ENCRYPTION_KEY=')) {
+    $taskWhatsappBytes=New-Object byte[] 32
+    $taskWhatsappRng=[Security.Cryptography.RandomNumberGenerator]::Create()
+    try{$taskWhatsappRng.GetBytes($taskWhatsappBytes)}finally{$taskWhatsappRng.Dispose()}
+    @('APP_WHATSAPP_SIMULATOR_ENABLED=false',('APP_WHATSAPP_ENCRYPTION_KEY='+[Convert]::ToBase64String($taskWhatsappBytes))) | Add-Content $taskStaffEnv
+}
 foreach($taskStaffLine in Get-Content $taskStaffEnv) {
     if($taskStaffLine -match '^([A-Z][A-Z0-9_]*)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}
 }

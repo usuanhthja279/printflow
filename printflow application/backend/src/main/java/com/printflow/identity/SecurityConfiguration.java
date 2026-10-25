@@ -61,7 +61,7 @@ public class SecurityConfiguration {
                 chain.doFilter(request,response);
             }
         },AnonymousAuthenticationFilter.class);
-        http.csrf(csrf->csrf.ignoringRequestMatchers("/api/public/payments/razorpay/webhook","/api/public/enquiries","/api/demo/**"))
+        http.csrf(csrf->csrf.ignoringRequestMatchers("/api/public/payments/razorpay/webhook","/api/public/whatsapp/webhook","/api/public/enquiries","/api/demo/**"))
             .requestCache(cache->cache.requestCache(new NullRequestCache()))
             .authorizeHttpRequests(auth->auth
                 .requestMatchers("/actuator/health","/api/public/**","/api/demo/**","/api/v1/auth/csrf","/error").permitAll()

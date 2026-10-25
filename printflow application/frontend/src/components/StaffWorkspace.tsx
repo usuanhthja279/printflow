@@ -16,6 +16,7 @@ import LocalMailPreview from './LocalMailPreview';
 import OwnerAssignment from './OwnerAssignment';
 import AccountAccess from './AccountAccess';
 import StaffAdministration from './StaffAdministration';
+import WhatsappInbox from './WhatsappInbox';
 import {FormEvent,useEffect,useState} from 'react';
 import {api,ApiError,EnquiryInput,PRODUCT_NAME,PRODUCTS_FALLBACK} from '@/lib/api';
 import {createStaffEnquiry,Lead,LeadActivity,signIn,StaffSession,staffMutation} from '@/lib/staff';
@@ -87,7 +88,8 @@ export default function StaffWorkspace(){
     {label:'Live work',value:items.filter(i=>i.status==='IN_PROGRESS').length,detail:'Design to delivery',action:()=>{setTab('ENQUIRIES');setStatusFilter('IN_PROGRESS');}}
    ]}/>}
    <div className="staff-toolbar"><p>Signed in as <strong>{staff.username}</strong> · {staff.role}</p><div className="row-actions"><button className="btn btn-outline btn-small" disabled={busy} onClick={async()=>{setError('');try{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}catch(e){failure(e);}}}>Refresh enquiries</button><button className="btn btn-ink btn-small" disabled={busy} onClick={()=>{setTab('ENQUIRIES');setAdding(!adding);}}>{adding?'Cancel new enquiry':'Add enquiry'}</button></div></div>
-   <div className="workspace-modules" role="navigation" aria-label="Workspace modules">{['ENQUIRIES',...(staff.role==='OWNER'||staff.contactsAccess?['CONTACTS']:[]),...(staff.role==='OWNER'?['PRODUCTION','DESIGN ROUTING','STAFF','PRODUCTS','EMAIL']:[])].map(t=><button key={t} className={tab===t?'btn btn-ink':'btn btn-outline'} onClick={()=>setTab(t)}>{t}</button>)}</div>
+   <div className="workspace-modules" role="navigation" aria-label="Workspace modules">{['ENQUIRIES',...(staff.role==='OWNER'||staff.contactsAccess?['CONTACTS']:[]),'WHATSAPP',...(staff.role==='OWNER'?['PRODUCTION','DESIGN ROUTING','STAFF','PRODUCTS','EMAIL']:[])].map(t=><button key={t} className={tab===t?'btn btn-ink':'btn btn-outline'} onClick={()=>setTab(t)}>{t}</button>)}</div>
+   {(staff.role==='OWNER'||staff.role==='SALES')&&tab==='WHATSAPP'&&<WhatsappInbox owner={staff.role==='OWNER'}/>}
    {tab==='CONTACTS'&&(staff.role==='OWNER'||staff.contactsAccess)&&<ContactsWorkspace lead={selected} linked={async()=>{const leads=await refresh();setSelected(old=>old?leads.find(x=>x.id===old.id)||null:null);}}/>}
    {staff.role==='OWNER'&&tab==='PRODUCTION'&&<ProductionBoard initialFilter={productionFocus}/>}{staff.role==='OWNER'&&tab==='DESIGN ROUTING'&&<DesignerRoutingPanel/>}
    {staff.role==='OWNER'&&tab==='STAFF'&&<StaffAdministration ownerId={staff.id} reauthenticate={()=>setStaff({...staff,mfaRequired:true})}/>}

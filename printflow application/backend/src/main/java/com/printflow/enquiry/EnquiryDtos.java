@@ -18,10 +18,12 @@ public final class EnquiryDtos {
         @Size(max=24) String printSides,
         @Size(max=80) String finish,
         @Size(max=2000) String notes,
-        Boolean privacyConsent,@Size(max=32) String privacyVersion,@Size(max=200) String website,@Size(max=2048) String challengeToken,java.time.LocalDate requestedDate
+        Boolean privacyConsent,@Size(max=32) String privacyVersion,@Size(max=200) String website,@Size(max=2048) String challengeToken,java.time.LocalDate requestedDate,
+        @Size(max=240) String intendedUse,Boolean whatsappConsent
     ) {
-        public CreateEnquiry(String n,String e,String p,String c,Integer q,String s,Integer g,String sides,String f,String notes,Boolean consent,String privacy,String website,String challenge){this(n,e,p,c,q,s,g,sides,f,notes,consent,privacy,website,challenge,null);}
-        public CreateEnquiry(String name,String email,String phone,String product,Integer quantity,String size,Integer gsm,String sides,String finish,String notes){this(name,email,phone,product,quantity,size,gsm,sides,finish,notes,null,null,null,null,null);}
+        public CreateEnquiry(String n,String e,String p,String c,Integer q,String s,Integer g,String sides,String f,String notes,Boolean consent,String privacy,String website,String challenge,java.time.LocalDate requestedDate){this(n,e,p,c,q,s,g,sides,f,notes,consent,privacy,website,challenge,requestedDate,null,false);}
+        public CreateEnquiry(String n,String e,String p,String c,Integer q,String s,Integer g,String sides,String f,String notes,Boolean consent,String privacy,String website,String challenge){this(n,e,p,c,q,s,g,sides,f,notes,consent,privacy,website,challenge,null,null,false);}
+        public CreateEnquiry(String name,String email,String phone,String product,Integer quantity,String size,Integer gsm,String sides,String finish,String notes){this(name,email,phone,product,quantity,size,gsm,sides,finish,notes,null,null,null,null,null,null,false);}
     }
     public record CreatedEnquiry(UUID publicId, String trackingToken, String status, Instant createdAt) {}
     public record EventView(String status, Instant at) {}

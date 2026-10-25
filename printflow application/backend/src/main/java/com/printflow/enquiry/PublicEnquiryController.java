@@ -23,14 +23,14 @@ public class PublicEnquiryController {
     }
     @GetMapping("/policy") public java.util.Map<String,Object> policy(){return java.util.Map.of("privacyVersion",com.printflow.identity.CustomerIdentityController.PRIVACY,"challengeRequired",challenge.required(),"siteKey",challenge.siteKey());}
     @PostMapping
-    public ResponseEntity<CreatedEnquiry> create(@Valid @RequestBody CreateEnquiry request,jakarta.servlet.http.HttpServletRequest http) {
+    public ResponseEntity<CreatedEnquiry> create(@Valid @RequestBody CreateEnquiry request,jakarta.servlet.http.HttpServletRequest http,@RequestHeader(value="Idempotency-Key",required=false) String idempotencyKey) {
         if (!enabled||(environment.matchesProfiles("prod")&&!privacyApproved)) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
             "Public enquiry intake disabled until production safeguards are implemented");
         limits.require("guest-ip",http.getRemoteAddr(),15);limits.require("guest-email",request.email().trim().toLowerCase(java.util.Locale.ROOT),5);
         if(!Boolean.TRUE.equals(request.privacyConsent())||!com.printflow.identity.CustomerIdentityController.PRIVACY.equals(request.privacyVersion())||request.website()!=null&&!request.website().isBlank())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Review the privacy notice and consent before submitting");
         challenge.verify(request.challengeToken());
         return ResponseEntity.status(HttpStatus.CREATED)
-            .cacheControl(CacheControl.noStore()).body(service.create(request));
+            .cacheControl(CacheControl.noStore()).body(service.create(request,idempotencyKey));
     }
     @GetMapping("/{publicId}")
     public ResponseEntity<TrackingView> track(@PathVariable UUID publicId,

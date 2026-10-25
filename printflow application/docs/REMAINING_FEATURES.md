@@ -19,7 +19,7 @@ The bounded operational slice supports manually confirmed proof-gated production
 
 ## Official service integrations (Phase 4)
 
-Incoming Google Workspace/Gmail mailbox reply/thread sync; optional Google/Microsoft customer sign-in configuration; official WhatsApp notifications; live payment provider activation, refund/chargeback and settlement reconciliation. Razorpay test-mode checkout/captured-payment verification and signed callback/webhook deduplication are implemented with private test credentials configured; actual provider capture and captured public webhook delivery remain unverified. Show connected status only after configuration and a live provider check. The shared portal conversation works independently of mailbox reply sync.
+Incoming Google Workspace/Gmail mailbox reply/thread sync; optional Google/Microsoft customer sign-in configuration; WhatsApp approved templates and proactive lifecycle notifications; live payment provider activation, refund/chargeback and settlement reconciliation. Batch 5 adds an official WhatsApp assistant/inbox, but Meta provider configuration/live delivery is not claimed. Razorpay test-mode checkout/captured-payment verification and signed callback/webhook deduplication are implemented with private test credentials configured; actual provider capture and captured public webhook delivery remain unverified. Show connected status only after configuration and a live provider check. The shared portal conversation works independently of mailbox reply sync.
 
 ## Later work (Phases 5–7)
 

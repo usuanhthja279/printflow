@@ -20,6 +20,13 @@
 - Reuse running services where possible. Build or restart only when changed code or configuration requires it; test-only or selector fixes should not trigger another application build or restart.
 - After focused checks pass, broaden or repeat verification only for new changes, failures or unresolved risks. Report concrete results and remaining limitations.
 
+### Local verification recovery notes
+
+- Verify each local service by checking its listener and health endpoint; a stale `.local/*.pid` file is not proof that a process is alive. Inspect the process command line before stopping anything, and preserve the user's running services.
+- Native database startup reads the ignored `.env`, but a Gradle shell also needs `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` mapped from `POSTGRES_*`. The checked-in local database uses port `5432`; do not rely on Spring's placeholder password or stale port numbers in test scripts.
+- A running Next standalone server holds `frontend/.next/standalone` open, so a default production build can fail with Windows `EBUSY`. Keep that server running and use the supported `PRINTFLOW_NEXT_DIST_DIR` setting for an isolated build (for example `.next-batch5`), with that same setting when launching its standalone preview. Copy static assets beneath the configured dist directory in the standalone tree. Revert any Next-generated `tsconfig.json` include additions and keep alternate build directories ignored.
+- When browser tests fail, read the first assertion and saved page snapshot before rebuilding. Scope locators when list summaries duplicate conversation content; wait for async UI confirmation before asserting request counters; update stale selectors to current visible copy. Re-run only the focused spec after these fixes.
+
 ### Windows browser-test startup and recovery
 
 - The frontend Playwright config targets installed Microsoft Edge (`msedge`) by default; `PLAYWRIGHT_CHANNEL` is the explicit override. Run tests through the project Playwright config instead of manually launching Edge or attaching to the user's interactive Edge profile.

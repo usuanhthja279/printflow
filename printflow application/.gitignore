@@ -5,6 +5,7 @@
 !.env.prod.example
 **/node_modules/
 **/.next/
+**/.next-*/
 **/*.tsbuildinfo
 **/target/
 **/.gradle/
