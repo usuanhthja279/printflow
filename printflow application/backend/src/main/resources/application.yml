@@ -2,7 +2,7 @@ spring:
   application:
     name: printflow-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5434/printflow}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/printflow}
     username: ${DB_USERNAME:printflow}
     password: ${DB_PASSWORD:local-postgres-change-me}
     hikari:

@@ -16,7 +16,7 @@ From the application folder:
 
 Stop before rebuilding. Default startup builds a standalone Next.js preview and starts the backend JAR; `-Dev` uses Next.js live reload. Backend changes require a Gradle build and restart. Start/stop operations preserve database files.
 
-Services bind to loopback only: website `127.0.0.1:3000`, API `127.0.0.1:8080`, PostgreSQL `127.0.0.1:5434`. Temporary production-profile verification uses `127.0.0.1:8082`; it is stopped by the regular stop script.
+Services bind to loopback only: website `127.0.0.1:3000`, API `127.0.0.1:8080`, project-local PostgreSQL `127.0.0.1:5432`. Temporary production-profile verification uses `127.0.0.1:8082`; it is stopped by the regular stop script. The project-managed local PostgreSQL cluster is separate from any system PostgreSQL service.
 
 ## Resources and files
 

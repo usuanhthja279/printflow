@@ -30,7 +30,7 @@ if (-not $Dev -and (-not $SkipBuild -or -not (Test-Path 'frontend/.next/standalo
     try { npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' } } finally { Pop-Location }
 }
 $env:SPRING_PROFILES_ACTIVE='dev'
-$env:DB_URL='jdbc:postgresql://127.0.0.1:5434/'+$env:POSTGRES_DB
+$env:DB_URL='jdbc:postgresql://127.0.0.1:5432/'+$env:POSTGRES_DB
 $env:DB_USERNAME=$env:POSTGRES_USER
 $env:DB_PASSWORD=$env:POSTGRES_PASSWORD
 $env:APP_DEMO_ENABLED=if($EnableDemo){'true'}else{'false'}

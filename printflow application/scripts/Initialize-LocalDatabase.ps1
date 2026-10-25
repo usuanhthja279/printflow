@@ -39,11 +39,16 @@ if (-not (Test-Path (Join-Path $taskData 'PG_VERSION'))) {
     if ($env:POSTGRES_DB -notmatch '^[a-z][a-z0-9_]*$') { throw 'Local database name must use lowercase letters, digits and underscores.' }
     ('CREATE DATABASE '+$env:POSTGRES_DB+';') | & (Join-Path $taskPg 'bin\postgres.exe') --single -D $taskData template1
     if ($LASTEXITCODE -ne 0) { throw 'Native development database creation failed' }
-    @("listen_addresses = '127.0.0.1'","port = 5434","shared_buffers = '32MB'","max_connections = 20","work_mem = '2MB'","maintenance_work_mem = '32MB'","logging_collector = off") | Add-Content (Join-Path $taskData 'postgresql.conf')
+    @("listen_addresses = '127.0.0.1'","port = 5432","shared_buffers = '32MB'","max_connections = 20","work_mem = '2MB'","maintenance_work_mem = '32MB'","logging_collector = off") | Add-Content (Join-Path $taskData 'postgresql.conf')
 }
+# Enforce the project-local listener even for a cluster initialized by an older script version.
+$taskConfigPath=Join-Path $taskData 'postgresql.conf'
+$taskConfigLines=Get-Content -LiteralPath $taskConfigPath | Where-Object { $_ -notmatch '^\s*(listen_addresses|port)\s*=' }
+$taskConfigLines | Set-Content -LiteralPath $taskConfigPath
+@("listen_addresses = '127.0.0.1'",'port = 5432') | Add-Content -LiteralPath $taskConfigPath
 & (Join-Path $taskPg 'bin\pg_ctl.exe') status -D $taskData 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     & (Join-Path $taskPg 'bin\pg_ctl.exe') start -D $taskData -l (Join-Path $taskLocal 'postgres.log') -w -t 60
     if ($LASTEXITCODE -ne 0) { throw 'Native PostgreSQL did not start. See .local/postgres.log.' }
 }
-Write-Host 'Native PostgreSQL ready on 127.0.0.1:5434 (local test data only).'
+Write-Host 'Native PostgreSQL ready on 127.0.0.1:5432 (local test data only).'
