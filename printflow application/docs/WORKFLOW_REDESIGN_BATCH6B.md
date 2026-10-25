@@ -4,8 +4,8 @@
 
 Branch: `feature/workflow-redesign-batch6b`
 
-Base: `29f35b3` (Batch 6A line)
-Status: implementation candidate; do not merge or deploy.
+Correction base: `9d1f94ec4641ed7b039d7cef472c0041ec6ccd64`
+Status: Batch 6B implementation and focused acceptance complete on this branch. Not merged or deployed.
 
 This batch extends the Batch 6A editor with versioned multipage documents, per-page print geometry, richer typography and image treatment, advisory preflight snapshots, and a provider boundary for design suggestions. Existing project authorization, malware scanning, immutable proof publishing, exact proof hashes, stale revision checks, approval invalidation and production gates remain authoritative.
 
@@ -26,6 +26,8 @@ This batch extends the Batch 6A editor with versioned multipage documents, per-p
 - Image preflight verifies scanned private storage/hash, decoding, physical-size effective DPI and image/frame aspect difference. Resolution warnings are advisory; RGB-to-CMYK, ICC profiles, spot colors, trapping and PDF/X are reported as unsupported/not checked rather than passed.
 - Persistent preflight snapshots bind enquiry, draft revision, content hash and ruleset version; authorized owner/designer acknowledgements are stored separately. Reports are advisory and explicitly return `isProductionApproval: false`.
 - Provider-neutral suggestion interface with a deterministic local provider for safe layout suggestions. A saved revision is required; suggestions must be previewed and explicitly applied, become ordinary undoable draft edits, and are rejected when stale. No external service is called and no AI credential is required.
+- Manual ChatGPT Plus handoff: export a contact-free design brief and current V2 JSON, copy a project-specific prompt, then paste or select generated JSON. The browser strictly validates V2 structure and limits, verifies every image reference against the project’s clean/scanned assets, previews variations and all-page differences, and requires explicit confirmation before local apply. Apply is undoable and still must save against the current optimistic revision. No content is sent to ChatGPT and no browser cookies or credentials are accessed.
+- V2 documents reject missing/duplicate pages, invalid active-page projections and malformed V1/V2 combinations. Export and preflight inspect image headers with dimension/pixel bounds before decoding. Preflight caches each asset inspection per report, accounts for fit mode in aspect findings, and uses letter spacing in text wrapping.
 - Mobile editor retains a single-column layout and compact page navigation.
 
 ## Deliberately not claimed
@@ -46,18 +48,22 @@ This batch extends the Batch 6A editor with versioned multipage documents, per-p
 
 ## Focused verification
 
-Commands are recorded here only when actually run. Java tests use the checked-in Gradle wrapper and local Java 21; Docker is not used.
+All commands below ran on 26 Oct 2026 using Java 21, native PostgreSQL 17.11, the checked-in Gradle wrapper and no Docker.
 
-- `backend` PowerShell: `$env:JAVA_HOME='C:\Users\usuan\.jdks\dragonwell-21.0.12'; .\gradlew.bat test --tests com.printflow.files.PrintDesignPdfTest --tests com.printflow.files.DesignPreflightServiceTest --tests com.printflow.files.LocalDesignAssistantProviderTest --tests com.printflow.files.PrintPreflightMetricsTest` — **PASS**, 13 test cases, 0 failures on 26 Oct 2026.
-- `frontend`: `npm.cmd run typecheck -- --incremental false` — **PASS** on 26 Oct 2026.
-- `frontend` PowerShell: `$env:PLAYWRIGHT_BASE_URL='http://localhost:3001'; npm.cmd exec -- playwright test e2e/batch6a-print-editor.spec.ts --project=desktop --project=mobile --reporter=line` — **PASS**, 4/4 on 26 Oct 2026. Covers designer page/layer interactions, image fitting, draft save/revision conflict, suggestion preview/apply/undo, proof publishing, customer private draft and no customer publish control. The fixtures use synthetic API responses. The temporary Next dev server on port 3001 was stopped afterward.
-- `frontend` PowerShell: `$env:PRINTFLOW_NEXT_DIST_DIR='.next-batch6b-build'; npm.cmd run build` — **PASS** on 26 Oct 2026.
-- Native PostgreSQL integration tests — **not run**. `Test-NetConnection 127.0.0.1 -Port 5432` returned `False`; no PostgreSQL backend was started. Playwright routes are synthetic and do not represent authenticated real-backend acceptance.
+- Focused Java unit tests: `.\gradlew.bat test --tests com.printflow.files.PrintDesignPdfTest --tests com.printflow.files.DesignPreflightServiceTest --tests com.printflow.files.LocalDesignAssistantProviderTest --tests com.printflow.files.PrintPreflightMetricsTest --rerun-tasks --no-build-cache` — **PASS**, 16 tests, 0 failures. Includes malformed V2 rejection, oversized PNG header rejection before pixel decode, positive letter-spacing width/wrapping, multipage export and PDF text/raster geometry.
+- Isolated native PostgreSQL integration: temporary PostgreSQL 17.11 cluster at `127.0.0.1:55432`, database `printflow_batch6b`. Spring/Flyway validated and applied **all 31 migrations through V31**. No user database or Docker was used.
+- Authenticated backend integration: `.\gradlew.bat integrationTest --tests com.printflow.DesignProofIntegrationTest --rerun-tasks --no-build-cache` — **PASS**, 15 tests, 0 failures. Synthetic customer, assigned/unassigned designers and MFA-verified owner used real local Spring HTTP sessions. Covered V1 draft read/convert/save to V2; multipage save/reopen; stale revision conflict; clean scanned image authorization and cross-project denial; repeated-asset preflight with fit-aware findings; persisted report history; customer/unassigned-designer acknowledgement denial; assigned designer/owner acknowledgement; and immutable exact-revision proof approval and edit invalidation.
+- Frontend typecheck: `npm.cmd run typecheck -- --incremental false` — **PASS**.
+- Next.js production build: `$env:PRINTFLOW_NEXT_DIST_DIR='.next-batch6b-build'; npm.cmd run build` — **PASS**.
+- Desktop/mobile Playwright: `$env:PLAYWRIGHT_BASE_URL='http://localhost:3001'; npm.cmd exec -- playwright test e2e/batch6a-print-editor.spec.ts --project=desktop --project=mobile --max-failures=1 --reporter=line` — **PASS**, 4/4. Browser endpoints are synthetic fixtures; the separate authenticated PostgreSQL integration above exercises the real local backend. The test covers strict malformed import rejection, variation preview/diff, explicit apply, undo, export and customer privacy.
+- `git diff --check` — **PASS** after final edits.
+
+The temporary UI test server and isolated PostgreSQL cluster were stopped after verification. They do not change the normal local service configuration.
 
 ## Visual evidence
 
-Actual browser screenshots are retained under `output/batch6b-visual-evidence/`: `designer-editor-desktop.png`, `designer-editor-mobile.png`, `customer-editor-desktop.png`, and `customer-editor-mobile.png`. They use synthetic API fixtures, not real customer/backend data. Inspected all four: page controls and editor remain in the viewport; the desktop customer layout keeps conversation in its side column; phone UI stacks without body-level horizontal overflow (assertion passed). At the captured scroll position only the top portion of the large A4 canvas is visible and the user must scroll to inspect the full sheet. `Reconnecting` is expected in these synthetic screens because collaboration endpoints are intentionally not connected. The phone screenshot places the top project navigation in a horizontally clipped rail; controls remain reachable by horizontal scrolling, but this can be improved in a later visual polish pass.
+Actual browser screenshots are retained under `output/batch6b-visual-evidence/`, captured at desktop **1440×900** and mobile **390×844**. In addition to designer/customer editor screenshots, `manual-import-preview-desktop.png`, `manual-import-preview-mobile.png`, `manual-variation-cards-desktop.png`, and `manual-variation-cards-mobile.png` show the manual handoff and imported variation review. They use synthetic API fixtures, not real customer/backend data. Images were opened and inspected: the comparison sheets preserve page proportions, desktop conversation remains in the right column, and mobile stacks without body-level horizontal overflow (assertion passed). The compact project navigation is horizontally scrollable on mobile. `Reconnecting` is expected in browser fixtures because collaboration endpoints are intentionally not connected. `designer-editor-desktop.png` records the editor canvas at its current scroll position; the full A4 sheet requires scrolling.
 
 ## Remaining limitations
 
-Preflight rules are general advisory checks, not printer-profile certification. Font availability/embedding is evaluated for the single bundled font. The frontend browser font and server embedded font are both Liberation Sans, but platform rasterization may differ slightly. Continue testing real PostgreSQL migrations and authorization against assigned/unassigned projects before treating this branch as accepted.
+Preflight rules are general advisory checks, not printer-profile certification. Font availability/embedding is evaluated for the single bundled font. The frontend browser font and server embedded font are both Liberation Sans, but platform rasterization may differ slightly. The browser journey is synthetic; the backend role/security path was exercised with synthetic users against the real local database. No external ChatGPT generation or AI credentials are used. PDF/X certification and advanced prepress remain unsupported.

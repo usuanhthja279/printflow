@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 public class PrintDesignPdf {
     private static final float PT_PER_MM=72f/25.4f;
     private static final long MAX_IMAGE_PIXELS=12_500_000L;
+    private static final int MAX_IMAGE_DIMENSION=12000;
 
     static java.io.InputStream openBundledFont(){return PrintDesignPdf.class.getResourceAsStream("/org/apache/pdfbox/resources/ttf/LiberationSans-Regular.ttf");}
 
@@ -46,8 +47,7 @@ public class PrintDesignPdf {
                 byte[] bytes=imageResolver.apply(element.assetId());
                 if(bytes==null||bytes.length==0||bytes.length>ArtifactPolicy.MAX_BYTES)throw new IllegalArgumentException("An image layer is unavailable or too large");
                 totalBytes+=bytes.length;if(totalBytes>ArtifactPolicy.MAX_BYTES)throw new IllegalArgumentException("The combined image layers exceed the export limit");
-                BufferedImage image=ImageIO.read(new ByteArrayInputStream(bytes));
-                if(image==null||(long)image.getWidth()*image.getHeight()>MAX_IMAGE_PIXELS)throw new IllegalArgumentException("An image layer cannot be safely decoded");
+                BufferedImage image=readBoundedImage(bytes);
                 totalPixels+=(long)image.getWidth()*image.getHeight();if(totalPixels>25_000_000L)throw new IllegalArgumentException("The combined image layers exceed the safe pixel limit");
                 images.put(element.assetId(),LosslessFactory.createFromImage(document,image));
             }
@@ -91,7 +91,7 @@ public class PrintDesignPdf {
                 float baseline=pageHeight-top-ascent;
                 float lineHeight=(float)(element.fontSizePt()*element.effectiveLineSpacing());
                 int visibleLines=Math.max(1,(int)Math.floor(h/lineHeight));
-                var lines=wrap(font,element.text(),element.fontSizePt(),w);
+                var lines=wrap(font,element.text(),element.fontSizePt(),w,(float)element.effectiveLetterSpacing());
                 canvas.saveGraphicsState();canvas.addRect(left,pageHeight-(top+h),w,h);canvas.clip();
                 canvas.beginText();canvas.setFont(font,element.fontSizePt());canvas.setNonStrokingColor(color(element.fill()));canvas.setCharacterSpacing((float)element.effectiveLetterSpacing());
                 for(int i=0;i<Math.min(lines.size(),visibleLines);i++){
@@ -114,7 +114,8 @@ public class PrintDesignPdf {
             }
         }finally{if(rotation!=0)canvas.restoreGraphicsState();if(alpha)canvas.restoreGraphicsState();}
     }
-    java.util.List<String> wrap(PDFont font,String text,float fontSize,float maxWidthPt){
+    java.util.List<String> wrap(PDFont font,String text,float fontSize,float maxWidthPt){return wrap(font,text,fontSize,maxWidthPt,0);}
+    java.util.List<String> wrap(PDFont font,String text,float fontSize,float maxWidthPt,float letterSpacingPt){
         try{
             var result=new java.util.ArrayList<String>();
             if(font instanceof PDType0Font embedded){for(int offset=0;offset<text.length();){int cp=text.codePointAt(offset);if(!embedded.hasGlyph(cp))throw new IllegalArgumentException("Text contains a character unsupported by the print proof font");offset+=Character.charCount(cp);}}
@@ -124,11 +125,11 @@ public class PrintDesignPdf {
                 String line="";
                 for(String word:paragraph.split("\\s+")){
                     String candidate=line.isEmpty()?word:line+" "+word;
-                    if(font.getStringWidth(candidate)*fontSize/1000f<=maxWidthPt){line=candidate;continue;}
+                    if(textWidth(font,candidate,fontSize,letterSpacingPt)<=maxWidthPt){line=candidate;continue;}
                     if(!line.isEmpty()){result.add(line);line="";}
                     String part="";
                     for(int offset=0;offset<word.length();){int cp=word.codePointAt(offset);String character=new String(Character.toChars(cp));String next=part+character;
-                        if(!part.isEmpty()&&font.getStringWidth(next)*fontSize/1000f>maxWidthPt){result.add(part);part=character;}else part=next;
+                        if(!part.isEmpty()&&textWidth(font,next,fontSize,letterSpacingPt)>maxWidthPt){result.add(part);part=character;}else part=next;
                         offset+=Character.charCount(cp);
                     }
                     line=part;
@@ -137,6 +138,27 @@ public class PrintDesignPdf {
             }
             return result;
         }catch(IOException unsupported){throw new IllegalArgumentException("Text contains a character unsupported by the print proof font",unsupported);}
+    }
+
+    static float textWidth(PDFont font,String text,float fontSize,float letterSpacingPt)throws IOException{
+        int characters=text.codePointCount(0,text.length());
+        return (float)(font.getStringWidth(text)*fontSize/1000f+Math.max(0,characters-1)*letterSpacingPt);
+    }
+
+    static BufferedImage readBoundedImage(byte[] bytes)throws IOException{
+        if(bytes==null||bytes.length==0)throw new IllegalArgumentException("Image is empty");
+        try(var input=ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))){
+            if(input==null)throw new IllegalArgumentException("Image cannot be safely decoded");
+            var readers=ImageIO.getImageReaders(input);if(!readers.hasNext())throw new IllegalArgumentException("Image cannot be safely decoded");
+            var reader=readers.next();try{
+                reader.setInput(input,true,true);int width=reader.getWidth(0),height=reader.getHeight(0);
+                if(width<=0||height<=0||width>MAX_IMAGE_DIMENSION||height>MAX_IMAGE_DIMENSION
+                        ||(long)width*height>MAX_IMAGE_PIXELS)throw new IllegalArgumentException("Image dimensions exceed the safe decode limit");
+                var image=reader.read(0);if(image==null||image.getWidth()!=width||image.getHeight()!=height)
+                    throw new IllegalArgumentException("Image cannot be safely decoded");
+                return image;
+            }finally{reader.dispose();}
+        }
     }
 
     private void ellipse(PDPageContentStream stream,float x,float y,float w,float h)throws IOException{

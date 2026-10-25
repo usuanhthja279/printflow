@@ -81,7 +81,25 @@ public final class PrintDesign {
             return new Document(2,templateId,active.widthMm(),active.heightMm(),active.bleedMm(),active.safeMarginMm(),active.elements(),pages,active.id());
         }
         public Document asV2() {
-            if(schemaVersion==2 && pages!=null && !pages.isEmpty()) return this;
+            if(schemaVersion==2) {
+                if(pages==null||pages.isEmpty()||pages.size()>100||activePageId==null||activePageId.isBlank())
+                    throw new IllegalArgumentException("A V2 design must include pages and an active page");
+                var ids=new java.util.HashSet<String>();Page active=null;
+                for(var page:pages){
+                    if(page==null||page.id()==null||page.id().isBlank()||!ids.add(page.id())||page.elements()==null)
+                        throw new IllegalArgumentException("A V2 design has an invalid or duplicate page");
+                    if(page.id().equals(activePageId))active=page;
+                }
+                if(active==null||widthMm!=active.widthMm()||heightMm!=active.heightMm()
+                        ||Double.compare(bleedMm,active.bleedMm())!=0
+                        ||Double.compare(safeMarginMm,active.safeMarginMm())!=0
+                        ||elements==null||!elements.equals(active.elements()))
+                    throw new IllegalArgumentException("V2 active-page fields must match the page list");
+                return this;
+            }
+            if(schemaVersion!=1||pages!=null&&!pages.isEmpty()||activePageId!=null)
+                throw new IllegalArgumentException("Unsupported or malformed print-design document version");
+            if(elements==null)throw new IllegalArgumentException("A V1 design must include its layer list");
             Page first=new Page("page-1","Page 1",widthMm,heightMm,bleedMm,safeMarginMm,elements);
             return v2(templateId,List.of(first),first.id());
         }

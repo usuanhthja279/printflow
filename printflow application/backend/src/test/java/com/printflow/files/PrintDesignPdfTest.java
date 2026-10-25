@@ -54,6 +54,27 @@ class PrintDesignPdfTest {
         var tooMany=PrintDesign.Document.v2("BLANK",pages,"p0");
         assertThrows(IllegalArgumentException.class,()->exporter.create(tooMany,id->null));
     }
+    @Test void rejectsMalformedV2DocumentsInsteadOfSilentlyFlatteningThem() {
+        var page=new PrintDesign.Page("front","Front",90,54,3,5,List.of(text("title","Front",5,8)));
+        var mismatched=new PrintDesign.Document(2,"BUSINESS_CARD",90,54,3,5,List.of(),List.of(page),"front");
+        assertThrows(IllegalArgumentException.class,()->exporter.create(mismatched,id->null));
+        var duplicate=new PrintDesign.Document(2,"BUSINESS_CARD",90,54,3,5,page.elements(),List.of(page,page),"front");
+        assertThrows(IllegalArgumentException.class,()->exporter.create(duplicate,id->null));
+        var legacyWithV2Fields=new PrintDesign.Document(1,"BUSINESS_CARD",90,54,3,5,page.elements(),List.of(page),"front");
+        assertThrows(IllegalArgumentException.class,()->exporter.create(legacyWithV2Fields,id->null));
+    }
+    @Test void boundedImageDecoderRejectsOversizedPngHeaderBeforePixelDecode() throws Exception {
+        var image=new BufferedImage(2,2,BufferedImage.TYPE_INT_RGB);var output=new ByteArrayOutputStream();ImageIO.write(image,"png",output);
+        byte[] bytes=output.toByteArray();int width=12001;bytes[16]=(byte)(width>>>24);bytes[17]=(byte)(width>>>16);bytes[18]=(byte)(width>>>8);bytes[19]=(byte)width;
+        java.util.zip.CRC32 crc=new java.util.zip.CRC32();crc.update(bytes,12,17);long value=crc.getValue();for(int i=0;i<4;i++)bytes[29+i]=(byte)(value>>>(24-i*8));
+        assertThrows(IllegalArgumentException.class,()->PrintDesignPdf.readBoundedImage(bytes));
+    }
+    @Test void letterSpacingIsIncludedInWidthAndTextWrapping() throws Exception {
+        var font=new org.apache.pdfbox.pdmodel.font.PDType1Font(org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA);
+        String text="PRINT SAFE";float plain=PrintDesignPdf.textWidth(font,text,12,0),spaced=PrintDesignPdf.textWidth(font,text,12,1.5f);
+        assertTrue(spaced>plain);
+        assertTrue(exporter.wrap(font,text,12,(plain+spaced)/2,1.5f).size()>exporter.wrap(font,text,12,(plain+spaced)/2,0).size());
+    }
     @Test void imageFitCalculationsPreserveContainAndCenterCropCoverGeometry() {
         var contain=PrintDesignPdf.imageFit(100,100,1600,800,"CONTAIN");
         assertEquals(100,contain.width(),.01f);assertEquals(50,contain.height(),.01f);

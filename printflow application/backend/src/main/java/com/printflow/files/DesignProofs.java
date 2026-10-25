@@ -61,6 +61,17 @@ public class DesignProofs {
   try{var document=json.readValue((String)rows.getFirst().get("document"),PrintDesign.Document.class).asV2();return Map.of("provider","LOCAL SUGGESTION","externalCallsEnabled",false,"draftRevision",revision,"suggestions",designAssistant.suggest(document));}
   catch(Exception e){throw new IllegalStateException("The saved design draft is invalid",e);}
  } public record PreflightRequest(@jakarta.validation.constraints.Min(1) long expectedDraftRevision) {}
+ private record PreflightImage(String code,String status,String message,int width,int height) {}
+ private PreflightImage inspectPreflightImage(UUID enquiry,UUID artifactId){
+  var asset=artifact(enquiry,artifactId);
+  if(!"CLEAN".equals(asset.get("state")))return new PreflightImage("IMAGE_SCAN","ERROR","Image asset is not cleared by malware scanning.",0,0);
+  if(!Set.of("image/png","image/jpeg").contains(asset.get("media_type")))return new PreflightImage("IMAGE_ENCODING","ERROR","Only scanned PNG or JPEG image assets are supported.",0,0);
+  try(var verified=store.verified(artifactId,((Number)asset.get("byte_size")).longValue(),(String)asset.get("sha256"))){
+   byte[] bytes=verified.readNBytes((int)ArtifactPolicy.MAX_BYTES+1);
+   if(bytes.length>ArtifactPolicy.MAX_BYTES)return new PreflightImage("IMAGE_SIZE","ERROR","Image exceeds the preflight size limit.",0,0);
+   var image=PrintDesignPdf.readBoundedImage(bytes);return new PreflightImage("","PASS","",image.getWidth(),image.getHeight());
+  }catch(IOException|IllegalArgumentException failure){return new PreflightImage("IMAGE_INTEGRITY","ERROR","Image failed bounded decoding or private-storage integrity verification.",0,0);}
+ }
  @Transactional public Map<String,Object> runEditorPreflight(StaffPrincipal user,UUID enquiry,PreflightRequest request){
   editorRole(user);lead(user,enquiry,false,false);editorStage(enquiry,false);
   var rows=db.queryForList("select id,revision,document::text as document from design_editor_drafts where enquiry_id=?",enquiry);
@@ -69,19 +80,21 @@ public class DesignProofs {
   if(revision!=request.expectedDraftRevision())throw conflict("The draft changed. Reload and run preflight again.");
   String raw=(String)row.get("document");PrintDesign.Document doc;
   try{doc=json.readValue(raw,PrintDesign.Document.class).asV2();}catch(Exception e){throw new IllegalStateException("Stored design draft is invalid",e);}
-  var findings=new java.util.ArrayList<>(DesignPreflightService.inspect(doc));
+  var findings=new java.util.ArrayList<>(DesignPreflightService.inspect(doc));var inspectedImages=new HashMap<UUID,PreflightImage>();
   for(var page:doc.pages())for(var layer:page.elements())if("IMAGE".equals(layer.type())){
-   var asset=artifact(enquiry,layer.assetId());String state=String.valueOf(asset.get("state"));
-   if(!"CLEAN".equals(state)){findings.add(new DesignPreflightService.Finding("IMAGE_SCAN","ERROR","ERROR",page.id(),layer.id(),"Image asset is not cleared by malware scanning."));continue;}
-   try(var verified=store.verified(layer.assetId(),((Number)asset.get("byte_size")).longValue(),(String)asset.get("sha256"))){
-    byte[] bytes=verified.readNBytes((int)ArtifactPolicy.MAX_BYTES+1);if(bytes.length>ArtifactPolicy.MAX_BYTES)throw new IllegalArgumentException("Image exceeds the preflight size limit");
-    var image=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));if(image==null){findings.add(new DesignPreflightService.Finding("IMAGE_ENCODING","ERROR","ERROR",page.id(),layer.id(),"Scanned image encoding could not be decoded."));continue;}
-    double dpi=PrintPreflightMetrics.effectiveDpi(image.getWidth(),image.getHeight(),layer.widthMm(),layer.heightMm());
+   var inspected=inspectedImages.computeIfAbsent(layer.assetId(),assetId->inspectPreflightImage(enquiry,assetId));
+   if(!inspected.code().isEmpty()){findings.add(new DesignPreflightService.Finding(inspected.code(),inspected.status(),inspected.status(),page.id(),layer.id(),inspected.message()));continue;}
+   try{
+    double dpi=PrintPreflightMetrics.effectiveDpi(inspected.width(),inspected.height(),layer.widthMm(),layer.heightMm());
     String message=String.format(java.util.Locale.ROOT,"Effective resolution is %.0f DPI at this layer size. The 150 DPI screen is advisory; confirm the product and press requirement.",dpi);
     findings.add(new DesignPreflightService.Finding("IMAGE_EFFECTIVE_DPI",dpi<150?"WARNING":"PASS",dpi<150?"WARNING":"INFO",page.id(),layer.id(),message));
-    double sourceRatio=image.getWidth()/(double)image.getHeight(),frameRatio=layer.widthMm()/layer.heightMm();
-    if(Math.abs(sourceRatio/frameRatio-1)>0.03)findings.add(new DesignPreflightService.Finding("IMAGE_ASPECT_RATIO","WARNING","WARNING",page.id(),layer.id(),"The image frame changes the source aspect ratio by more than 3%; inspect crop and distortion."));
-   }catch(IOException failure){findings.add(new DesignPreflightService.Finding("IMAGE_INTEGRITY","ERROR","ERROR",page.id(),layer.id(),"Image hash or private storage verification failed."));}
+    double sourceRatio=inspected.width()/(double)inspected.height(),frameRatio=layer.widthMm()/layer.heightMm();
+    if(Math.abs(sourceRatio/frameRatio-1)>0.03){String fit=layer.effectiveImageFit();
+     if("COVER".equals(fit))findings.add(new DesignPreflightService.Finding("IMAGE_CROP","WARNING","WARNING",page.id(),layer.id(),"Cover fitting intentionally crops the source to fill this frame. Review the centered crop."));
+     else if("CONTAIN".equals(fit))findings.add(new DesignPreflightService.Finding("IMAGE_CONTAIN_PADDING","INFO","INFO",page.id(),layer.id(),"Contain fitting preserves the source and leaves unused space in this frame."));
+     else findings.add(new DesignPreflightService.Finding("IMAGE_DISTORTION","WARNING","WARNING",page.id(),layer.id(),"Stretch fitting changes the source aspect ratio and may visibly distort the image."));
+    }
+   }catch(IllegalArgumentException invalidGeometry){findings.add(new DesignPreflightService.Finding("IMAGE_GEOMETRY","ERROR","ERROR",page.id(),layer.id(),"Image frame geometry is invalid for resolution checks."));}
   }  String hash;try{hash=java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}
   String report;try{report=json.writeValueAsString(findings);}catch(Exception e){throw new IllegalStateException("Preflight result could not be recorded",e);}
   UUID reportId=UUID.randomUUID();UUID draftId=(UUID)row.get("id");
