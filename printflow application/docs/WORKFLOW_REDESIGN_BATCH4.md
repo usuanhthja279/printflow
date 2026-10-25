@@ -4,7 +4,7 @@
 
 - Repository: `usuanhthja279/printflow`
 - Branch: `feature/workflow-redesign-batch4`
-- Latest implementation commit: `8cb22ed62f75c92ea7f639c8590dbfbb7bf4ad6c`
+- Branch baseline for this acceptance pass: `c8f16a849316129b2f571c1f634be10d8876675e`
 - No merge, deployment, Batch 5 work or unrelated redesign is included.
 - Local services use PostgreSQL 17 on `5432`, Spring on `8080` and Next.js on `3000`. Docker was not used.
 
