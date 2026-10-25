@@ -1,0 +1,141 @@
+- banner:
+  - link "J.D.Printex Home":
+    - /url: /business
+    - text: J . J.D.Printex
+  - group:
+    - img "Your generated avatar"
+- main:
+  - paragraph: J.D.PRINTEX / DELIVERY
+  - heading "Delivery workspace" [level=1]
+  - paragraph: Your role, assigned tasks and authorized tools.
+  - navigation "Your work modules":
+    - text: WORKSPACE
+    - button "Delivery tasks"
+  - heading "Delivery tasks" [level=2]
+  - button "Refresh assigned tasks"
+  - paragraph: Only work assigned to your individual delivery account appears here.
+  - list:
+    - listitem:
+      - strong: Synthetic pickup to delivery
+      - paragraph: Shaadi & Wedding Cards · 1000 copies · Due 25 Oct 2026 · TODO
+      - button "Open assigned task"
+- contentinfo:
+  - strong: J.D.Printex
+  - paragraph: Wedding, hospitality and promotional printing.
+  - link "Request a quote":
+    - /url: /request-quote
+  - link "Track enquiry":
+    - /url: /track
+  - link "Staff workspace":
+    - /url: /business
+  - text: J.D.Printex · Local development preview · Online checkout uses test payments.
+- alert
+- dialog "Assigned task":
+  - paragraph: Assigned task
+  - button "Close dialog": ×
+  - heading "Synthetic pickup to delivery" [level=2]
+  - region "Production and delivery":
+    - paragraph: ORDER HANDOFF
+    - heading "Production & delivery" [level=3]
+    - button "Refresh delivery progress"
+    - text: CURRENT SERVER STAGE
+    - strong: Delivered · 48-hour review
+    - list "Order delivery steps":
+      - listitem:
+        - text: ✓
+        - strong: Production ready
+        - text: Production and quality handoff confirmed.
+        - emphasis: Complete
+      - listitem:
+        - text: ✓
+        - strong: Pickup evidence
+        - text: Dispatch was confirmed after the server readiness checks.
+        - emphasis: Complete
+      - listitem:
+        - text: ✓
+        - strong: Dispatch
+        - text: The server confirmed dispatch.
+        - emphasis: Complete
+      - listitem:
+        - text: ✓
+        - strong: Transit
+        - text: Delivery confirmation has been recorded.
+        - emphasis: Complete
+      - listitem:
+        - text: ✓
+        - strong: Delivery evidence
+        - text: The delivery milestone was confirmed with the applicable evidence policy.
+        - emphasis: Complete
+      - listitem:
+        - text: "06"
+        - strong: Customer review
+        - text: Review period ends 27/10/2026, 6:17:20 pm.
+        - emphasis: Current
+      - listitem:
+        - text: "07"
+        - strong: Completed
+        - text: Completion is recorded by the server; this screen cannot complete work.
+        - emphasis: Pending
+    - paragraph: Delivered 25/10/2026, 6:17:20 pm. The 48-hour review period starts from this server-confirmed time.
+    - region "Delivery photo evidence":
+      - heading "Delivery photo evidence" [level=4]
+      - button "Refresh delivery photos"
+      - paragraph: A scanned pickup photo is required before dispatch and a delivery photo before confirming delivery. Photos are private to the project. Times below record upload time.
+      - paragraph: Photo readiness is shown separately for dispatch and delivery confirmation. Production, payment, proof and role checks are enforced by the server.
+      - region "Dispatch readiness":
+        - heading "Dispatch readiness" [level=4]
+        - list:
+          - listitem:
+            - strong: Scanned pickup photo
+            - text: A server-scanned original is available for this milestone.
+            - emphasis: Scan passed
+      - region "Delivery confirmation readiness":
+        - heading "Delivery confirmation readiness" [level=4]
+        - list:
+          - listitem:
+            - strong: Scanned delivery photo
+            - text: A server-scanned original is available for this milestone.
+            - emphasis: Scan passed
+      - text: ✓ Pickup ✓ Transit ✓ Delivery
+      - article:
+        - 'button "Preview pickup photo: Synthetic cartons checked at pickup"':
+          - img "Synthetic cartons checked at pickup"
+        - text: Pickup ✓ Scan passed
+        - paragraph: Synthetic cartons checked at pickup
+        - text: "Original file: pickup.png Server upload: 25/10/2026, 6:17:17 pm"
+      - article:
+        - 'button "Preview transit photo: Synthetic cartons photographed in transit"':
+          - img "Synthetic cartons photographed in transit"
+        - text: Transit ✓ Scan passed
+        - paragraph: Synthetic cartons photographed in transit
+        - text: "Original file: transit.png Server upload: 25/10/2026, 6:17:18 pm"
+      - article:
+        - 'button "Preview delivery photo: Synthetic cartons handed over at delivery"':
+          - img "Synthetic cartons handed over at delivery"
+        - text: Delivery ✓ Scan passed
+        - paragraph: Synthetic cartons handed over at delivery
+        - text: "Original file: delivery.png Server upload: 25/10/2026, 6:17:19 pm"
+      - text: "02"
+      - heading "Add delivery evidence" [level=4]
+      - paragraph: Choose a photo, describe the milestone, then wait for scanning.
+      - text: Photo milestone
+      - combobox "Photo milestone":
+        - option "Delivery" [selected]
+      - text: Delivery photo
+      - button "Delivery photo"
+      - text: Photo caption
+      - textbox "Photo caption":
+        - /placeholder: Describe packing, pickup or delivery evidence
+      - button "Upload delivery photo" [disabled]
+      - paragraph: PNG or JPEG, up to 5 MiB each. Up to 30 photos per project. Uploaded evidence is preserved.
+    - paragraph: Milestones record staff confirmations. Photo times show when files were uploaded; GPS tracking is not enabled. Progress and completion are recorded by the server.
+    - status: Progress saved. The server confirmed the milestone.
+  - paragraph: Capture pickup, transit and delivery photos for this fictional test order.
+  - paragraph: Due 25 Oct 2026
+  - text: Task status
+  - combobox "Task status":
+    - option "To do" [selected]
+    - option "In progress"
+    - option "Done"
+  - paragraph: This updates your assigned task only. Production release and dispatch confirmation are separate workflows.
+  - button "Save task status"

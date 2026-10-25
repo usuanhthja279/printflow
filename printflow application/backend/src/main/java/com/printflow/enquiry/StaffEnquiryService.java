@@ -117,7 +117,7 @@ public class StaffEnquiryService {
         return lead;
     }
     private void requireVisible(StaffPrincipal staff,Enquiry lead) {
-        if(!staff.role().equals("OWNER")&&(lead.status==EnquiryStatus.NEW||!staff.id().equals(lead.assignedStaffId)))throw new NoSuchElementException();
+        if(!staff.role().equals("OWNER")&&(lead.status==EnquiryStatus.NEW||(lead.assignedStaffId!=null&&!staff.id().equals(lead.assignedStaffId))))throw new NoSuchElementException();
     }
     private void audit(Enquiry lead,StaffPrincipal staff,String action,String details) {
         jdbc.update("insert into lead_activities(id,enquiry_id,actor_id,action,details) values(?,?,?,?,?)",

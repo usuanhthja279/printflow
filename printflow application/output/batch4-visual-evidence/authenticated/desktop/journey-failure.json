@@ -1,0 +1,4 @@
+{
+  "phase": "Confirm delivered submit",
+  "error": "TimeoutError: locator.click: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Delivery photo evidence', exact: true }).getByRole('button', { name: 'Preview delivery photo: Synthetic cartons handed over at delivery', exact: true })\u001b[22m\n"
+}
