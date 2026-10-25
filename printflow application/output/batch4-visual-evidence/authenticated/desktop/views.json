@@ -168,5 +168,35 @@
     "file": "34-customer-delivery-photo-gallery.png",
     "title": "Customer delivery photo gallery",
     "significance": "The customer can review pickup, transit and delivery images without downloading."
+  },
+  {
+    "file": "35-customer-full-photo-preview.png",
+    "title": "Customer full photo preview",
+    "significance": "A private full-size photo preview supports customer review and later dispute resolution."
+  },
+  {
+    "file": "36-customer-photo-gallery-on-phone.png",
+    "title": "Customer photo gallery on phone",
+    "significance": "Responsive evidence cards keep the same private review actions on a narrow screen."
+  },
+  {
+    "file": "37-printer-production-queue-on-phone.png",
+    "title": "Printer production queue on phone",
+    "significance": "Horizontal operation lanes support the assigned queue on small screens."
+  },
+  {
+    "file": "38-delivery-evidence-on-phone.png",
+    "title": "Delivery evidence on phone",
+    "significance": "Camera/file input and milestone evidence are available in the assigned mobile task."
+  },
+  {
+    "file": "39-final-customer-work-overview.png",
+    "title": "Final customer work overview",
+    "significance": "The stage summary and right-side conversation present the completed delivery journey."
+  },
+  {
+    "file": "40-lifecycle-email-activity.png",
+    "title": "Lifecycle email activity",
+    "significance": "Shows queued outgoing production and delivery notifications; SMTP is disabled in this synthetic journey."
   }
 ]

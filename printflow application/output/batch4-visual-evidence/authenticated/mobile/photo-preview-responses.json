@@ -1,0 +1,30 @@
+[
+  {
+    "artifactId": "f7062e18-cb32-4d62-8fb6-da34109b7dc2",
+    "status": 503,
+    "contentType": "text/plain",
+    "bytes": 39,
+    "error": "Synthetic one-time preview interruption"
+  },
+  {
+    "artifactId": "996c5769-0961-4fda-8f6c-c28fc2c7041f",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 27067,
+    "error": null
+  },
+  {
+    "artifactId": "7e1fa4b8-eb42-43bb-a1e8-35a58b0df4cc",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 26525,
+    "error": null
+  },
+  {
+    "artifactId": "f7062e18-cb32-4d62-8fb6-da34109b7dc2",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 27013,
+    "error": null
+  }
+]

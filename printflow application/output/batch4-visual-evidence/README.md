@@ -1,6 +1,6 @@
 # Batch 4 visual evidence
 
-These are actual Playwright screenshots from `frontend/e2e/workflow-redesign.spec.ts`, captured against the local UI using synthetic API fixtures. They are not evidence of live payments or customer data.
+The first group below contains actual Playwright screenshots from `frontend/e2e/workflow-redesign.spec.ts`, captured against the local UI using synthetic API fixtures. The authenticated evidence group near the end comes from the native PostgreSQL/Spring-backed `frontend/e2e/operations-flow.spec.ts` workflow with isolated synthetic accounts and photo artifacts. Neither group is evidence of real customer data, real payment or external mail delivery.
 
 The 1008 collaboration-revocation screenshots come from `frontend/e2e/batch3-designer-workspace.spec.ts`; they show the same project access revocation state for context during this Batch 4 review.
 
@@ -49,3 +49,12 @@ The 1008 collaboration-revocation screenshots come from `frontend/e2e/batch3-des
 - The photo preview fixture is the repository's synthetic image. Its role is to verify aspect ratio, secure preview UI and caption placement.
 
 For test results and the missing real-backend browser harness fixture limitation, see `docs/WORKFLOW_REDESIGN_BATCH4.md`.
+
+## Authenticated local backend journey
+
+See [`docs/WORKFLOW_REDESIGN_BATCH4.md`](../../docs/WORKFLOW_REDESIGN_BATCH4.md) for commands, results and diagnosis. Each viewport directory contains 40 actual screenshots plus `views.json`, `result.json` and browser-observed `photo-preview-responses.json`:
+
+- [`authenticated/desktop`](authenticated/desktop/) — 1440 × 900.
+- [`authenticated/mobile`](authenticated/mobile/) — 390 × 844.
+
+The delivery-gallery screenshot shows pickup, transit and delivery thumbnails after the order reaches delivery. The full-size preview screenshot verifies the original image opens in the page. The captured delivery request has a deliberately injected one-time 503 followed by a successful authenticated 200 retry; pickup and transit return 200 directly. The injected failure is a retry regression fixture, not a claim about the status of the historical failure.

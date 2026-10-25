@@ -1,0 +1,202 @@
+[
+  {
+    "file": "01-owner-enquiry-queue.png",
+    "title": "Owner enquiry queue",
+    "significance": "Business intake and access to production and design routing. Queue rows are masked."
+  },
+  {
+    "file": "02-designer-routing-availability.png",
+    "title": "Designer routing availability",
+    "significance": "Shows workload and pause/resume controls. Only the synthetic designer card is included."
+  },
+  {
+    "file": "03-public-print-studio.png",
+    "title": "Public print studio",
+    "significance": "Interactive print-family discovery leads into the quote journey."
+  },
+  {
+    "file": "04-guided-quote-request.png",
+    "title": "Guided quote request",
+    "significance": "Customers can ask for guidance instead of knowing technical print specifications."
+  },
+  {
+    "file": "05-enquiry-saved-with-reference.png",
+    "title": "Enquiry saved with reference",
+    "significance": "Confirms the request and scanned reference are saved; tracking credentials are masked."
+  },
+  {
+    "file": "06-quotation-issued.png",
+    "title": "Quotation issued",
+    "significance": "Business commercial approval and the immutable quotation presented for customer review."
+  },
+  {
+    "file": "07-customer-account-activation.png",
+    "title": "Customer account activation",
+    "significance": "A guest receives temporary access and must choose a password before using the account."
+  },
+  {
+    "file": "08-quotation-pdf-preview.png",
+    "title": "Quotation PDF preview",
+    "significance": "A multipage commercial quotation can be read without downloading."
+  },
+  {
+    "file": "09-designer-assigned-automatically.png",
+    "title": "Designer assigned automatically",
+    "significance": "Acceptance allocates the available synthetic designer without a manual assignment action."
+  },
+  {
+    "file": "10-accepted-customer-work.png",
+    "title": "Accepted customer work",
+    "significance": "The wide work page orders the stages and keeps the project conversation on the right."
+  },
+  {
+    "file": "11-designer-proof-workspace.png",
+    "title": "Designer proof workspace",
+    "significance": "The assigned designer shares a scanned proof tied to the accepted quotation."
+  },
+  {
+    "file": "12-customer-pinned-feedback.png",
+    "title": "Customer pinned feedback",
+    "significance": "Location comments tell the designer which part of the proof needs revision."
+  },
+  {
+    "file": "13-revised-proof-approved.png",
+    "title": "Revised proof approved",
+    "significance": "Approval belongs to the exact revision and unlocks the production handoff."
+  },
+  {
+    "file": "14-advance-and-balance-agreement.png",
+    "title": "Advance and balance agreement",
+    "significance": "Payment terms are explicitly agreed before production."
+  },
+  {
+    "file": "15-customer-invoice-pdf.png",
+    "title": "Customer invoice PDF",
+    "significance": "The issued commercial invoice is available as a private PDF download in the customer workspace."
+  },
+  {
+    "file": "16-production-assignment.png",
+    "title": "Production assignment",
+    "significance": "Owner selects the printer, machine, urgency and due date for released work."
+  },
+  {
+    "file": "17-owner-production-board.png",
+    "title": "Owner production board",
+    "significance": "The scoped board shows the job in its actual operation lane, with assignment and urgency."
+  },
+  {
+    "file": "18-printer-assigned-queue.png",
+    "title": "Printer assigned queue",
+    "significance": "The printer sees only their own production jobs."
+  },
+  {
+    "file": "19-production-hold.png",
+    "title": "Production hold",
+    "significance": "A reasoned hold pauses stage movement."
+  },
+  {
+    "file": "20-production-resumed.png",
+    "title": "Production resumed",
+    "significance": "The hold is resolved before work advances."
+  },
+  {
+    "file": "21-printing-operation.png",
+    "title": "Printing operation",
+    "significance": "The printer explicitly records that printing has started."
+  },
+  {
+    "file": "22-finishing-operation.png",
+    "title": "Finishing operation",
+    "significance": "A handoff separates printing from finishing."
+  },
+  {
+    "file": "23-quality-check-queue.png",
+    "title": "Quality check queue",
+    "significance": "Quality review follows finishing."
+  },
+  {
+    "file": "24-quality-rework-loop.png",
+    "title": "Quality rework loop",
+    "significance": "Failed quality review sends the job back to printing with a reason."
+  },
+  {
+    "file": "25-finishing-after-rework.png",
+    "title": "Finishing after rework",
+    "significance": "The revised work passes through finishing again."
+  },
+  {
+    "file": "26-quality-recheck.png",
+    "title": "Quality recheck",
+    "significance": "A new quality review is required after rework."
+  },
+  {
+    "file": "27-ready-for-dispatch.png",
+    "title": "Ready for dispatch",
+    "significance": "Passing QC updates both the production queue and fulfilment readiness."
+  },
+  {
+    "file": "28-assigned-delivery-task.png",
+    "title": "Assigned delivery task",
+    "significance": "The delivery staff account sees its own pickup-to-delivery instructions."
+  },
+  {
+    "file": "29-pickup-evidence-gate.png",
+    "title": "Pickup evidence gate",
+    "significance": "Dispatch remains blocked until the required pickup image has passed scanning."
+  },
+  {
+    "file": "30-pickup-photo-recorded.png",
+    "title": "Pickup photo recorded",
+    "significance": "Private scanned pickup evidence is attached to the assigned work."
+  },
+  {
+    "file": "31-transit-photo-recorded.png",
+    "title": "Transit photo recorded",
+    "significance": "An optional transit image documents the journey between dispatch and delivery."
+  },
+  {
+    "file": "32-delivery-evidence-before-confirmation.png",
+    "title": "Delivery evidence before confirmation",
+    "significance": "Delivery evidence is uploaded before staff confirm the final handover."
+  },
+  {
+    "file": "33-delivery-confirmed.png",
+    "title": "Delivery confirmed",
+    "significance": "Delivery starts the existing 48-hour customer review period."
+  },
+  {
+    "file": "34-customer-delivery-photo-gallery.png",
+    "title": "Customer delivery photo gallery",
+    "significance": "The customer can review pickup, transit and delivery images without downloading."
+  },
+  {
+    "file": "35-customer-full-photo-preview.png",
+    "title": "Customer full photo preview",
+    "significance": "A private full-size photo preview supports customer review and later dispute resolution."
+  },
+  {
+    "file": "36-customer-photo-gallery-on-phone.png",
+    "title": "Customer photo gallery on phone",
+    "significance": "Responsive evidence cards keep the same private review actions on a narrow screen."
+  },
+  {
+    "file": "37-printer-production-queue-on-phone.png",
+    "title": "Printer production queue on phone",
+    "significance": "Horizontal operation lanes support the assigned queue on small screens."
+  },
+  {
+    "file": "38-delivery-evidence-on-phone.png",
+    "title": "Delivery evidence on phone",
+    "significance": "Camera/file input and milestone evidence are available in the assigned mobile task."
+  },
+  {
+    "file": "39-final-customer-work-overview.png",
+    "title": "Final customer work overview",
+    "significance": "The stage summary and right-side conversation present the completed delivery journey."
+  },
+  {
+    "file": "40-lifecycle-email-activity.png",
+    "title": "Lifecycle email activity",
+    "significance": "Shows queued outgoing production and delivery notifications; SMTP is disabled in this synthetic journey."
+  }
+]

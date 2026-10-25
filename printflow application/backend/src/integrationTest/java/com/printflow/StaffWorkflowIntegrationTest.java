@@ -108,8 +108,13 @@ class StaffWorkflowIntegrationTest {
         String base="/api/v1/staff/enquiries/"+created.lead().id();
         long revision=jdbc.queryForObject("select revision from enquiries where id=?",Long.class,created.lead().id());
         assertEquals(200,owner.send("PATCH",base+"/assignment","{\"revision\":"+revision+",\"claim\":false}",true).statusCode());
+        assertTrue(owner.send("GET","/api/v1/staff/enquiries?filter=UNASSIGNED",null,false).body().contains(created.lead().id().toString()));
+        assertTrue(other.send("GET","/api/v1/staff/enquiries?filter=UNASSIGNED",null,false).body().contains(created.lead().id().toString()));
+        assertFalse(owner.send("GET","/api/v1/staff/enquiries?filter=MINE",null,false).body().contains(created.lead().id().toString()));
         revision=jdbc.queryForObject("select revision from enquiries where id=?",Long.class,created.lead().id());
         assertEquals(200,other.send("PATCH",base+"/assignment","{\"revision\":"+revision+",\"claim\":true}",true).statusCode());
+        assertFalse(owner.send("GET","/api/v1/staff/enquiries?filter=UNASSIGNED",null,false).body().contains(created.lead().id().toString()));
+        assertTrue(other.send("GET","/api/v1/staff/enquiries?filter=MINE",null,false).body().contains(created.lead().id().toString()));
         assertEquals(404,owner.send("GET",base+"/activities",null,false).statusCode());
         revision=jdbc.queryForObject("select revision from enquiries where id=?",Long.class,created.lead().id());
         assertEquals(200,other.send("POST",base+"/resolve","{\"revision\":"+revision+",\"kind\":\"REJECTED\",\"message\":\"Unable to fulfill the requested specification after review.\"}",true).statusCode());
