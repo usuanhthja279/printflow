@@ -28,7 +28,7 @@ test('print editor supports templates, canvas layers, ordering, undo/redo, save 
   else if(p==='/api/v1/design/enquiries/'+id+'/editor-draft'&&req.method()==='GET')body=draft;
   else if(p==='/api/v1/design/enquiries/'+id+'/editor-draft'&&req.method()==='PUT'){
    const input=req.postDataJSON();if(conflictOnce){conflictOnce=false;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({message:'stale revision'})});return;}
-   expect(input.expectedRevision).toBe(draft.revision);draft={revision:draft.revision+1,document:input.document,updatedAt:new Date().toISOString()};body=draft;
+   expect(input.expectedRevision).toBe(draft.revision);expect(input.document.safeMarginMm).toBeLessThanOrEqual(50);draft={revision:draft.revision+1,document:input.document,updatedAt:new Date().toISOString()};body=draft;
   }
   else if(p==='/api/v1/design/enquiries/'+id+'/editor-export'&&req.method()==='POST'){exported++;body={artifact:{id:'design-pdf-'+exported,display_name:'Editor-proof.pdf',kind:'DESIGN',state:'CLEAN',media_type:'application/pdf',byte_size:1200,sha256:'a'.repeat(64)},expectedProofRevision:0,summary:'Generated from editor draft'};}
   else if(p==='/api/v1/design/enquiries/'+id+'/artifacts'&&req.method()==='POST')body={id:'synthetic-image',display_name:'sample.png',kind:'DESIGN',state:'CLEAN',media_type:'image/png',byte_size:png.length,sha256:'b'.repeat(64)};
@@ -74,8 +74,9 @@ test('print editor supports templates, canvas layers, ordering, undo/redo, save 
  await editor.getByRole('button',{name:'Move layer down'}).click();await editor.getByRole('button',{name:'Undo'}).click();await editor.getByRole('button',{name:'Redo'}).click();
  await editor.getByLabel('Width (mm)').fill('90');await editor.getByLabel('Height (mm)').fill('54');await expect(editor.getByRole('img',{name:/Print canvas 90 by 54 millimetres/})).toBeVisible();
  await editor.getByLabel('Starter layout').selectOption('A4_FLYER');await expect(editor.getByRole('img',{name:/Print canvas 210 by 297 millimetres/})).toBeVisible();
+ await test.step('A4 safe-margin input clamps to the backend 50 mm maximum',async()=>{const safe=editor.getByLabel('Safe margin');await safe.fill('75');await expect(safe).toHaveValue('50');});
  await editor.getByRole('button',{name:'Add text'}).click();await editor.getByRole('button',{name:'Add image'}).click();await editor.locator('input[type=file]').setInputFiles({name:'sample.png',mimeType:'image/png',buffer:png});await expect(editor.locator('svg image')).toHaveCount(1);
- await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 1');expect(draft.revision).toBe(1);
+ await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 1');expect(draft.revision).toBe(1);expect(draft.document.safeMarginMm).toBe(50);
  await editor.getByRole('button',{name:'Export and share proof'}).click();await expect.poll(()=>published).toBe(1);await expect.poll(()=>exported).toBe(1);
  await editor.getByRole('button',{name:'Add text'}).click();
  await editor.getByRole('button',{name:'Save draft'}).click();await expect(editor.getByRole('status')).toContainText('Draft saved · revision 2');

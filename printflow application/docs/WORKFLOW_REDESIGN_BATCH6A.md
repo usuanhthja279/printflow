@@ -85,7 +85,7 @@ The images were opened and inspected. The desktop grid keeps the canvas and laye
 - Corrected PDF text placement to convert the editor's top-left millimetre coordinates to PDF points once. The baseline uses the shared font ascent; positive SVG clockwise rotation is reproduced around the same layer center in PDF coordinates.
 - The editor and PDF exporter now use the same bundled Liberation Sans regular font. The authenticated `/api/v1/design/editor-font` route serves the exact PDFBox font resource to the SVG editor. Unsupported glyphs are rejected with a clear validation error instead of producing a misleading proof.
 - Both renderers wrap at word boundaries (and long words by glyph) using the layer's measured width, preserve explicit line breaks, and clip ink to the text layer bounds. Line count is clipped to the configured text-box height.
-- Safe-margin editing now clamps to half the shorter trim dimension, including when canvas dimensions are reduced.
+- Safe-margin editing clamps to the lower of the backend 50 mm maximum and half the shorter trim dimension, including when canvas dimensions are reduced.
 - Drag and resize history records the document snapshot from pointer-down. Desktop browser coverage moves and resizes layers with actual mouse pointer input, then verifies Undo and Redo restore the respective geometry.
 - Simultaneous first saves rely on the existing unique enquiry constraint with `ON CONFLICT DO NOTHING`; the losing request receives the normal 409 conflict response. PostgreSQL coverage creates a fresh draft race and verifies one 200, one 409, and one saved row.
 - Added a browser raster comparison: the Java PDF unit test emits a test-only PDF under `backend/build/test-output/`; Playwright renders that actual exporter output with PDF.js and compares its foreground pixels with the same document rendered by the editor SVG at the PDF's physical page scale. The test requires foreground intersection-over-union above 0.72. The fixture is generated during tests and is not a committed artifact.
@@ -120,3 +120,15 @@ Refreshed screenshots are stored under `output/batch6a-visual-evidence/` and ins
 - Only Liberation Sans regular is supported. Other fonts/styles and complex-script shaping remain pending; unsupported code points are rejected before PDF output.
 - Text wrapping is width-measured and clipped but does not provide typography controls such as kerning adjustment, widow/orphan handling or fine leading.
 - The editor remains a one-page layout MVP and does not provide CMYK/PDF-X production preflight, press trapping or imposition.
+
+## Batch 6A MVP close-out
+
+**Implementation status: COMPLETE** for the Batch 6A editor foundation on `feature/workflow-redesign-batch6a`. The A4 safe-margin control now applies `min(50 mm, half the shorter trim dimension)`, matching backend validation. The editor regression enters 75 mm on an A4 canvas, observes the UI clamp to 50 mm, and saves successfully with the synthetic API enforcing the same 50 mm contract.
+
+Close-out verification on 2026-10-26:
+
+- `npm.cmd run typecheck` — PASS.
+- `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 npx.cmd playwright test e2e/batch6a-print-editor.spec.ts --project=desktop --project=mobile --max-failures=1` — PASS, 4 cases across desktop/mobile; includes the A4 safe-margin regression.
+- `PRINTFLOW_NEXT_DIST_DIR=.next-batch6a-close npm.cmd run build` — PASS; optimized compilation, TypeScript, static page generation and route finalization completed.
+
+No backend validation, proof revision, authorization, hash approval or production gate was changed. Advanced editor work remains in `docs/REMAINING_FEATURES.md`. The Batch 6A screenshots are synthetic UI evidence; comprehensive cross-module visual acceptance remains a separate implementation-freeze gate.

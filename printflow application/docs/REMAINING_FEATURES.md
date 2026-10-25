@@ -30,3 +30,23 @@ Permission-based reuse/publication of actual customer portfolio work (current sa
 Owner acceptance, encrypted storage/backups and restore drill, retention/erasure execution, maintained scanning/detection validation, native CI/QA, monitoring and deployment hardening, provider consent/configuration and production security review. Current local clean-file checks are development evidence, not complete production certification.
 
 Automatic designer allocation with owner availability/manual overrides is implemented. Reserved synthetic addresses use a separate TEST routing pool. See OPERATIONS_WORKFLOW.md and the screenshot evidence report for this slice.
+
+## Design editor and Batch 6B backlog
+
+### Batch 6A MVP status — implementation complete
+
+The Batch 6A editor foundation is implemented on `feature/workflow-redesign-batch6a`: structured private drafts, customer/assigned-designer authorization, mm canvas with bleed and safe guides, text and basic shapes, scanned project image layers, layer operations, zoom/pan, undo/redo, optimistic revision conflicts, shared-font PDF export, raster-position comparison and immutable proof publishing. The safe-margin control enforces the backend's 50 mm ceiling and canvas geometry. See [WORKFLOW_REDESIGN_BATCH6A.md](WORKFLOW_REDESIGN_BATCH6A.md).
+
+### Batch 6B — AI Design and Prepress (separate development branch)
+
+Prepare and implement this work only on `feature/workflow-redesign-batch6b`, based on the completed Batch 6A branch. Scope requires a separate approved implementation brief. Backlog candidates:
+
+- Human-reviewed AI-assisted layout and copy suggestions, with customer artwork and business data protected by explicit authorization and no automatic proof approval or production release.
+- Multipage design documents, spreads, page ordering and reusable templates.
+- Font selection/styles, complex-script layout, font licensing and embedding policy, PDF artwork import/rasterization and image crop/fitting controls.
+- Prepress checks for trim/bleed/safe areas, resolution, missing or unsupported glyphs, color spaces, spot colors, ICC profiles, PDF/X output, trapping and imposition.
+- Reproducible preflight reports and clear human sign-off; preserve the existing immutable proof hash and reapproval gates.
+
+### Implementation-freeze visual acceptance gate
+
+Batch 6A implementation completion does not close the broader implementation freeze. Before freezing the end-to-end app, capture and inspect actual desktop (1440 × 900) and mobile (390 × 844) browser views across public quote intake, customer account/quotation/payment/artwork review, designer editing/proofs/conversation, owner dashboard/quotation/finance, production queues and dispatch/delivery evidence. Verify the important paths and their status/error/empty states, record synthetic versus real-backend evidence, and resolve clipping, overlap, overflow and unreachable controls. Keep this cross-module acceptance separate from the Batch 6A editor-only screenshots.
