@@ -15,11 +15,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextImpl;
 
 class CollaborationBrokerTest {
     private final SimpMessagingTemplate messaging=mock(SimpMessagingTemplate.class);
+    @SuppressWarnings("unchecked")
+    private final ObjectProvider<SimpMessagingTemplate> messagingProvider=mock(ObjectProvider.class);
     private final DesignProofs proofs=mock(DesignProofs.class);
     private final StaffDirectory directory=mock(StaffDirectory.class);
     private final ApplicationEventPublisher events=mock(ApplicationEventPublisher.class);
@@ -30,7 +33,8 @@ class CollaborationBrokerTest {
     private CollaborationBroker broker;
 
     @BeforeEach void setup(){
-        broker=new CollaborationBroker(messaging,proofs,directory,events);
+        when(messagingProvider.getObject()).thenReturn(messaging);
+        broker=new CollaborationBroker(messagingProvider,proofs,directory,events);
         when(session.getAttribute("SPRING_SECURITY_CONTEXT")).thenReturn(new SecurityContextImpl(new UsernamePasswordAuthenticationToken(customer,"n/a")));
         when(directory.current(customer)).thenReturn(true);
         broker.join("socket-1",customer,session,project);

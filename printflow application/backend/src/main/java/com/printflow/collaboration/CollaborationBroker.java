@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,12 +33,12 @@ public class CollaborationBroker {
     private static final long IDLE_MILLIS=45_000;private static final int MAX_CONNECTIONS=2000;private static final int MAX_PROJECT_CONNECTIONS=50;
     private final ConcurrentMap<String,Connection> sessions=new ConcurrentHashMap<>();
     private final ConcurrentMap<String,WebSocketSession> transports=new ConcurrentHashMap<>();
-    private final SimpMessagingTemplate messages;
+    private final ObjectProvider<SimpMessagingTemplate> messages;
     private final DesignProofs proofs;
     private final StaffDirectory directory;
     private final ApplicationEventPublisher events;
 
-    public CollaborationBroker(SimpMessagingTemplate messages,DesignProofs proofs,StaffDirectory directory,ApplicationEventPublisher events){this.messages=messages;this.proofs=proofs;this.directory=directory;this.events=events;}
+    public CollaborationBroker(ObjectProvider<SimpMessagingTemplate> messages,DesignProofs proofs,StaffDirectory directory,ApplicationEventPublisher events){this.messages=messages;this.proofs=proofs;this.directory=directory;this.events=events;}
 
     public void attachTransport(WebSocketSession session){transports.put(session.getId(),session);}
     public void detachTransport(String sessionId){transports.remove(sessionId);leave(sessionId);}
@@ -102,7 +103,7 @@ public class CollaborationBroker {
     }
     private List<Connection> projectConnections(UUID project){var room=new ArrayList<Connection>();sessions.values().forEach(c->{if(c.project.equals(project))room.add(c);});return room;}
     private void send(Connection target,Object event){
-        try{authorize(target.user,target.httpSession,target.project);SimpMessageHeaderAccessor headers=SimpMessageHeaderAccessor.create();headers.setSessionId(target.sessionId);headers.setLeaveMutable(true);messages.convertAndSendToUser(target.user.getUsername(),"/queue/collaboration/"+target.project,event,headers.getMessageHeaders());}
+        try{authorize(target.user,target.httpSession,target.project);SimpMessageHeaderAccessor headers=SimpMessageHeaderAccessor.create();headers.setSessionId(target.sessionId);headers.setLeaveMutable(true);messages.getObject().convertAndSendToUser(target.user.getUsername(),"/queue/collaboration/"+target.project,event,headers.getMessageHeaders());}
         catch(RuntimeException revoked){sessions.remove(target.sessionId,target);WebSocketSession socket=transports.remove(target.sessionId);if(socket!=null&&socket.isOpen())try{socket.close(CloseStatus.POLICY_VIOLATION);}catch(Exception ignored){}}
     }
     private static String label(String role){return role.equals("DESIGNER")?"Designer":role.equals("CUSTOMER")?"Customer":"J.D.Printex team";}
